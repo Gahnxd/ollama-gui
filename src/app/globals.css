@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&display=swap');
+
+/* Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS */
+:root {
+  --red:rgb(110, 8, 8);
+}
+
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('https://fonts.gstatic.com/s/funneldisplay/v2/B50bF7FGv37QNVWgE0ga--4PbZSRJXrOHcLHLoAYmmPXWA.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base Styles */
+html, body {
+  background-color: #000000;
+  background: radial-gradient(circle at center, var(--red) 0%, rgba(0, 0, 0, 1) 70%);
+  color: #ffffff;
+  font-family: 'Funnel Display', Inter, system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Custom Button Styles */
+.model-button {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.model-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.model-button .icon {
+  font-size: 18px;
+}
+
+.model-button .text {
+  color: white;
+  font-size: 14px;
+}
+
+/* Header Toggle Buttons */
+.header-toggle-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: white;
+  margin: 1em 1em;
+}
+
+.header-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.header-toggle-button.active {
+  color: #b90025;
+  background-color: rgba(255, 255, 255, 0.15);
+}
