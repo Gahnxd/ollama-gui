@@ -204,7 +204,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                 },
                 // Custom link component to handle long URLs
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                a({node, children, href, ...props}: any) {
+                a({children, href, ...props}: any) {
                   return (
                     <a 
                       href={href} 
