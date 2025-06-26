@@ -65,7 +65,15 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     let totalEvalDuration = 0;
     
     // Function to update all stats with only accurate information
-    const updateAllStats = (parsed: any, isDone: boolean) => {
+    const updateAllStats = (parsed: {
+      eval_count?: number;
+      eval_duration?: number;
+      prompt_eval_count?: number;
+      prompt_eval_duration?: number;
+      total_duration?: number;
+      load_duration?: number;
+      [key: string]: number | string | boolean | undefined;
+    }) => {
       // TOKENS PER SECOND - Only use API data if available
       let tokensPerSecond = 0;
       if (parsed.eval_count && parsed.eval_duration && parsed.eval_duration > 0) {
@@ -101,7 +109,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       if (done) {
         setIsTyping(false);
         // Final stats update with 100% completion
-        updateAllStats({ eval_count: tokensGenerated }, true);
+        updateAllStats({ eval_count: tokensGenerated });
         break;
       }
 
@@ -112,19 +120,18 @@ export default function Chat({ model, onNewStats }: ChatProps) {
         const parsed = JSON.parse(line);
         if (parsed.done) {
           // Update with final stats from API
-          updateAllStats(parsed, true);
+          updateAllStats(parsed);
         } else {
           // Count tokens in this chunk (rough estimate)
           // Use a better token counting approximation
-          let content = parsed.message.content;
+          const content = parsed.message.content;
           
-          // We'll let MessageBubble handle the think content extraction
           // Just accumulate the content as it comes
           // Count roughly 4 chars as a token (very approximate)
           const newTokens = Math.max(1, Math.ceil(content.length / 4));
           tokensGenerated += newTokens;
           
-          // Update message content - let MessageBubble handle the think content extraction
+          // Update message content
           assistantMessage += content;
           setMessages((prev) => {
             const newMessages = [...prev];
@@ -136,7 +143,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
           });
           
           // Update stats during generation
-          updateAllStats(parsed, false);
+          updateAllStats(parsed);
         }
       }
     }

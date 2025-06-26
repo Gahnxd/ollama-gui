@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Model } from '@/lib/types';
 import LoadingBar from './LoadingBar';
-import { Cpu, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface ModelSelectorProps {
   onSelectModel: (model: string) => void;

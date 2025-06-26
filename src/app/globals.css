@@ -26,6 +26,10 @@ html, body {
   overflow: hidden;
 }
 
+code {
+  font-family: 'Courier New', monospace;
+}
+
 /* Custom Button Styles */
 .model-button {
   width: 100%;

@@ -5,7 +5,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 import { Message } from '@/lib/types';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+
 
 interface MessageBubbleProps {
   message: Message;
@@ -16,10 +19,30 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
   const [thinkContent, setThinkContent] = useState<string | null>(null);
   const [displayContent, setDisplayContent] = useState<string>(message.content || '');
   const [isThinkingExpanded, setIsThinkingExpanded] = useState<boolean>(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  
+  // Reset the copied state after 2 seconds
+  useEffect(() => {
+    if (copiedCode) {
+      const timer = setTimeout(() => {
+        setCopiedCode(null);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [copiedCode]);
+  
+  // Function to handle copying code
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => {
+      setCopiedCode(null);
+    }, 500);
+  };
 
   useEffect(() => {
     // Handle the display of content and think content
-    if (!isUser && message.content) {
+    if (message.content) {
       // First, try to extract think content using regex for complete <think> tags
       const thinkRegex = /<think>([\s\S]*?)<\/think>/s;
       const match = message.content.match(thinkRegex);
@@ -130,10 +153,53 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
       >
         <div
           className={`bg-surface/40 border border-white/10`}
-          style={{ borderRadius: '2rem', minWidth: '100px', maxWidth: '48%'}}
+          style={{ borderRadius: '2rem', minWidth: '20%', maxWidth: '48%'}}
         >
           <div className="prose prose-invert prose-sm max-w-full" style={{ padding: '1rem 1rem'}}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayContent}</ReactMarkdown>
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                code({inline, className, children, ...props}: any) {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const codeContent = String(children || '');
+                  
+                  if (!inline) {
+                    // This is a code block (not inline code)
+                    return (
+                      <div className="relative w-90 overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem' }}>
+                        <button 
+                          onClick={() => handleCopyCode(codeContent)}
+                          className="model-button rounded-full"
+                          aria-label="Copy code"
+                          style={{ color: 'white', padding: '0.25rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
+                        >
+                          {copiedCode === codeContent ? 
+                            <Check size={10}/> : 
+                            <Copy size={10}/>
+                          }
+                        </button>
+                        <SyntaxHighlighter
+                          language={match ? match[1] : 'bash'}
+                          style={vscDarkPlus}
+                          customStyle={{ 
+                            background: 'transparent', 
+                            padding: '0.5rem', 
+                            paddingRight: '2.5rem' 
+                          }}
+                          wrapLongLines={true}
+                        >
+                          {codeContent}
+                        </SyntaxHighlighter>
+                      </div>
+                    );
+                  }
+                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '2px', borderRadius: '2rem' }}>{children}</code>;
+                }
+              }}
+            >
+              {displayContent}
+            </ReactMarkdown>
           </div>
         </div>
       </motion.div>)}
