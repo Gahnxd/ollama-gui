@@ -2,15 +2,17 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
-// Using Inter as a fallback since Funnel Display isn't available in next/font/google
+// Load fonts
+
 const inter = Inter({
   subsets: ['latin'],
-  variable: '--font',
+  variable: '--font-inter',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'Ollama GUI',
-  description: 'A modern, animated GUI for Ollama.',
+  description: 'A GUI for Ollama.',
 };
 
 export default function RootLayout({
@@ -19,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable}`}>
       <body className="bg-background text-primary min-h-screen">
         {children}
       </body>

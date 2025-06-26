@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Message, LLMStats } from '@/lib/types';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
@@ -17,6 +17,16 @@ export default function Chat({ model, onNewStats }: ChatProps) {
   const [isTyping, setIsTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Reset stats when component loads
+  useEffect(() => {
+    // Reset all stats to initial values
+    onNewStats({
+      tokensPerSecond: 0,
+      totalTokens: 0,
+      modelName: model
+    });
+  }, [model, onNewStats]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -47,11 +57,51 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     const decoder = new TextDecoder();
     let assistantMessage = '';
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+    
+    // Initialize stats tracking
+    const startTime = performance.now();
+    let tokensGenerated = 0;
+    let totalEvalTokens = 0;
+    let totalEvalDuration = 0;
+    
+    // Function to update all stats with only accurate information
+    const updateAllStats = (parsed: any, isDone: boolean) => {
+      // TOKENS PER SECOND - Only use API data if available
+      let tokensPerSecond = 0;
+      if (parsed.eval_count && parsed.eval_duration && parsed.eval_duration > 0) {
+        // Use the actual data from the API
+        totalEvalTokens += parsed.eval_count;
+        totalEvalDuration += parsed.eval_duration;
+        // Convert nanoseconds to seconds (1e9 nanoseconds = 1 second)
+        tokensPerSecond = totalEvalTokens / (totalEvalDuration / 1e9);
+      } else if (tokensGenerated > 0) {
+        // Fallback to a simple calculation based on elapsed time
+        const elapsedSeconds = (performance.now() - startTime) / 1000;
+        if (elapsedSeconds > 0) {
+          tokensPerSecond = tokensGenerated / elapsedSeconds;
+        }
+      }
+      
+      // Ensure tokensPerSecond is a valid number and round to 2 decimal places
+      tokensPerSecond = isNaN(tokensPerSecond) ? 0 : Math.round(tokensPerSecond * 100) / 100;
+      
+      // TOTAL TOKENS - Use API data if available, otherwise count from stream
+      const totalTokens = parsed.eval_count || tokensGenerated;
+      
+      // Update all stats
+      onNewStats({
+        tokensPerSecond,
+        totalTokens,
+        modelName: model
+      });
+    };
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
         setIsTyping(false);
+        // Final stats update with 100% completion
+        updateAllStats({ eval_count: tokensGenerated }, true);
         break;
       }
 
@@ -61,16 +111,32 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       for (const line of lines) {
         const parsed = JSON.parse(line);
         if (parsed.done) {
-          const tokensPerSecond = parsed.eval_count / (parsed.eval_duration / 1e9);
-          const totalTokens = parsed.eval_count;
-          onNewStats({ tokensPerSecond, totalTokens });
+          // Update with final stats from API
+          updateAllStats(parsed, true);
         } else {
-          assistantMessage += parsed.message.content;
+          // Count tokens in this chunk (rough estimate)
+          // Use a better token counting approximation
+          let content = parsed.message.content;
+          
+          // We'll let MessageBubble handle the think content extraction
+          // Just accumulate the content as it comes
+          // Count roughly 4 chars as a token (very approximate)
+          const newTokens = Math.max(1, Math.ceil(content.length / 4));
+          tokensGenerated += newTokens;
+          
+          // Update message content - let MessageBubble handle the think content extraction
+          assistantMessage += content;
           setMessages((prev) => {
             const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = { role: 'assistant', content: assistantMessage };
+            newMessages[newMessages.length - 1] = { 
+              role: 'assistant', 
+              content: assistantMessage
+            };
             return newMessages;
           });
+          
+          // Update stats during generation
+          updateAllStats(parsed, false);
         }
       }
     }
@@ -93,7 +159,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       ) : (
         <div ref={chatContainerRef} className="flex-1 p-4 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} />
+            <MessageBubble key={i} message={msg} isUser={msg.role === 'user'} />
           ))}
           {isTyping && <TypingIndicator />}
           <div ref={messagesEndRef} />

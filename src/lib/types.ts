@@ -12,4 +12,5 @@ export interface Message {
 export interface LLMStats {
   tokensPerSecond: number;
   totalTokens: number;
+  modelName?: string; // Model name
 }

@@ -1,15 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { BarChart2, HomeIcon, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BarChart2, HomeIcon } from 'lucide-react';
 import Chat from '@/components/Chat';
 import { LLMStats } from '@/lib/types';
 import { motion } from 'framer-motion';
+import Dashboard from '@/components/Dashboard';
+import ModelSelector from '@/components/ModelSelector';
 
 export default function HomePage() {
   const [model, setModel] = useState('');
+  
+  // Update model name in stats when model changes
+  useEffect(() => {
+    if (model) {
+      setStats(prevStats => ({
+        ...prevStats,
+        modelName: model
+      }));
+    }
+  }, [model]);
   const [showStats, setShowStats] = useState(false);
-  const [stats, setStats] = useState<LLMStats>({ tokensPerSecond: 0, totalTokens: 0 });
+  const [stats, setStats] = useState<LLMStats>({
+    tokensPerSecond: 0,
+    totalTokens: 0,
+    modelName: ''
+  });
 
   return (
     <div className="relative h-screen w-full bg-background overflow-hidden">
@@ -43,54 +59,14 @@ export default function HomePage() {
               
               {showStats && (
                 <motion.div 
-                  className="w-80 bg-black border-l border-white/10 h-full overflow-auto"
+                  className="w-80 h-full overflow-auto"
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                 >
-                  <div className="flex justify-between items-center p-4 border-b border-white/20">
-                    <h3 className="font-mono text-lg uppercase tracking-wider">Stats</h3>
-                    <button 
-                      onClick={() => setShowStats(false)}
-                      className="text-white/70 hover:text-white"
-                      aria-label="Close stats"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-col divide-y divide-white/10">
-                    {/* Tokens Per Second */}
-                    <div className="p-4 border-b border-white/20">
-                      <div className="uppercase text-xs font-mono text-white/50 mb-1 tracking-wider">Tokens/sec</div>
-                      <div className="font-mono text-3xl">
-                        {stats.tokensPerSecond.toFixed(2)}
-                      </div>
-                    </div>
-                    
-                    {/* Total Tokens */}
-                    <div className="p-4 border-b border-white/20">
-                      <div className="uppercase text-xs font-mono text-white/50 mb-1 tracking-wider">Total tokens</div>
-                      <div className="font-mono text-3xl">
-                        {stats.totalTokens.toLocaleString()}
-                      </div>
-                    </div>
-                    
-                    {/* Progress Bar (Example) */}
-                    <div className="p-4 border-b border-white/20">
-                      <div className="uppercase text-xs font-mono text-white/50 mb-1 tracking-wider">Progress</div>
-                      <div className="w-full bg-white/10 h-2 rounded-full mt-2">
-                        <div 
-                          className="bg-white h-full rounded-full" 
-                          style={{ width: `${Math.min(stats.tokensPerSecond * 5, 100)}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <span className="text-xs font-mono text-white/50">0%</span>
-                        <span className="text-xs font-mono text-white/50">100%</span>
-                      </div>
-                    </div>
+                  <div className="relative h-full">
+                    <Dashboard stats={stats} />
                   </div>
                 </motion.div>
               )}
@@ -103,13 +79,8 @@ export default function HomePage() {
               <h2 className="text-xl mb-12 font-mono">Select a Model</h2>
               
               <div className="w-full" style={{ maxWidth: '720px' }}>
-                <button 
-                  onClick={() => setModel('gemma3:4b')}
-                  className="model-button"
-                >
-                  <span className="icon">⚙️</span>
-                  <span className="text">gemma3:4b</span>
-                </button>
+                {/* Dynamically load models from Ollama API */}
+                <ModelSelector onSelectModel={setModel} />
               </div>
             </div>
           </div>

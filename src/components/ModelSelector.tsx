@@ -37,23 +37,26 @@ export default function ModelSelector({ onSelectModel }: ModelSelectorProps) {
   };
 
   return (
-    <div className="space-y-2">
+    <div>
       {isLoading ? (
         <LoadingBar />
       ) : (
-        <div className="space-y-1">
+        <div className="flex flex-wrap justify-center" style={{ gap: '12px' }}>
           {models.map((model, index) => (
             <button
               key={model.name || index}
               onClick={() => handleSelectModel(model)}
-              className={`w-full bg-black hover:bg-black/80 border ${selectedModel?.name === model.name ? 'border-accent' : 'border-white/10'} p-2 text-left text-xs flex items-center justify-between`}
+              className={`model-button ${selectedModel?.name === model.name ? 'border-accent' : ''}`}
+              style={{
+                justifyContent: 'center',
+                width: 'calc(33.33% - 16px)',
+                minWidth: '150px',
+                maxWidth: 'fit-content'
+              }}
             >
-              <div className="flex items-center gap-2">
-                <Cpu size={14} className="text-white" />
-                <span>{model.name}</span>
-              </div>
+              <span className="text">{model.name}</span>
               {selectedModel?.name === model.name && (
-                <Check size={14} className="text-accent" />
+                <Check size={14} className="text-accent ml-2" />
               )}
             </button>
           ))}
