@@ -24,6 +24,8 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     onNewStats({
       tokensPerSecond: 0,
       totalTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
       modelName: model
     });
   }, [model, onNewStats]);
@@ -60,8 +62,8 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     
     // Initialize stats tracking
     const startTime = performance.now();
-    let tokensGenerated = 0;
-    let totalEvalTokens = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
     let totalEvalDuration = 0;
     
     // Function to update all stats with only accurate information
@@ -74,32 +76,35 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       load_duration?: number;
       [key: string]: number | string | boolean | undefined;
     }) => {
-      // TOKENS PER SECOND - Only use API data if available
       let tokensPerSecond = 0;
+      if (parsed.prompt_eval_count && parsed.prompt_eval_duration && parsed.prompt_eval_duration > 0) {
+        inputTokens = parsed.prompt_eval_count;
+      }
       if (parsed.eval_count && parsed.eval_duration && parsed.eval_duration > 0) {
         // Use the actual data from the API
-        totalEvalTokens += parsed.eval_count;
+        outputTokens += parsed.eval_count;
         totalEvalDuration += parsed.eval_duration;
         // Convert nanoseconds to seconds (1e9 nanoseconds = 1 second)
-        tokensPerSecond = totalEvalTokens / (totalEvalDuration / 1e9);
-      } else if (tokensGenerated > 0) {
+        tokensPerSecond = outputTokens / (totalEvalDuration / 1e9);
+      } else if (outputTokens > 0) {
         // Fallback to a simple calculation based on elapsed time
         const elapsedSeconds = (performance.now() - startTime) / 1000;
         if (elapsedSeconds > 0) {
-          tokensPerSecond = tokensGenerated / elapsedSeconds;
+          tokensPerSecond = outputTokens / elapsedSeconds;
         }
       }
       
       // Ensure tokensPerSecond is a valid number and round to 2 decimal places
       tokensPerSecond = isNaN(tokensPerSecond) ? 0 : Math.round(tokensPerSecond * 100) / 100;
-      
-      // TOTAL TOKENS - Use API data if available, otherwise count from stream
-      const totalTokens = parsed.eval_count || tokensGenerated;
+            
+      const totalTokens = outputTokens + inputTokens;
       
       // Update all stats
       onNewStats({
         tokensPerSecond,
         totalTokens,
+        inputTokens,
+        outputTokens,
         modelName: model
       });
     };
@@ -108,8 +113,6 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       const { done, value } = await reader.read();
       if (done) {
         setIsTyping(false);
-        // Final stats update with 100% completion
-        updateAllStats({ eval_count: tokensGenerated });
         break;
       }
 
@@ -123,13 +126,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
           updateAllStats(parsed);
         } else {
           // Count tokens in this chunk (rough estimate)
-          // Use a better token counting approximation
           const content = parsed.message.content;
-          
-          // Just accumulate the content as it comes
-          // Count roughly 4 chars as a token (very approximate)
-          const newTokens = Math.max(1, Math.ceil(content.length / 4));
-          tokensGenerated += newTokens;
           
           // Update message content
           assistantMessage += content;
@@ -142,8 +139,6 @@ export default function Chat({ model, onNewStats }: ChatProps) {
             return newMessages;
           });
           
-          // Update stats during generation
-          updateAllStats(parsed);
         }
       }
     }

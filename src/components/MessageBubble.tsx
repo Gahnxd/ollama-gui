@@ -160,11 +160,17 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
               remarkPlugins={[remarkGfm]}
               components={{
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                code({inline, className, children, ...props}: any) {
+                code({className, children, node, ...props}: any) {
                   const match = /language-(\w+)/.exec(className || '');
                   const codeContent = String(children || '');
+                  const position = node.position;
+                  const start = position?.start.offset;
+                  const end = position?.end.offset;
+                  const rawContent = displayContent.substring(start, end)
                   
-                  if (!inline) {
+                  const isInline = rawContent.includes("`") && !rawContent.includes("```");
+                  
+                  if (!isInline) {
                     // This is a code block (not inline code)
                     return (
                       <div className="relative w-90 overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem' }}>
@@ -194,7 +200,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                       </div>
                     );
                   }
-                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '2px', borderRadius: '2rem' }}>{children}</code>;
+                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '2px', borderRadius: '2rem', paddingLeft: '10px', paddingRight: '10px' }}>{children}</code>;
                 }
               }}
             >

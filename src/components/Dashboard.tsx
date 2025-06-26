@@ -51,11 +51,11 @@ export default function Dashboard({ stats }: DashboardProps) {
           </div>
           <div className="grid grid-rows-2 items-center justify-center text-center">
             <div className="text-sm text-gray-500">Input</div>
-            <div className="text-3xl font-mono text-white">{Math.round(stats.totalTokens * 0.3)}</div>
+            <div className="text-3xl font-mono text-white">{stats.inputTokens}</div>
           </div>
           <div className="grid grid-rows-2 items-center justify-center text-center">
             <div className="text-sm text-gray-500">Output</div>
-            <div className="text-3xl font-mono text-white">{Math.round(stats.totalTokens * 0.7)}</div>
+            <div className="text-3xl font-mono text-white">{stats.outputTokens}</div>
           </div>
         </div>
 
