@@ -18,7 +18,7 @@
 html, body {
   background-color: #000000;
   background: radial-gradient(circle at center, var(--red) 0%, rgba(0, 0, 0, 1) 70%);
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.90);
   font-family: 'Funnel Display', var(--font-inter), system-ui, sans-serif;
   margin: 0;
   padding: 0;

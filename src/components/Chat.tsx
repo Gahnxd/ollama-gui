@@ -221,7 +221,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
               className="bg-transparent text-white w-full resize-none focus:outline-none"
               placeholder="Ask me anything"
               style={{ 
-                color: 'white', 
+                color: 'rgba(255, 255, 255, 0.90)', 
                 padding: '1em 1em',
                 minHeight: '24px',     /* Start with single line height */
                 maxHeight: '144px',    /* Max height (6 lines at 24px) */

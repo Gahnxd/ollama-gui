@@ -24,6 +24,8 @@ export default function HomePage() {
   const [stats, setStats] = useState<LLMStats>({
     tokensPerSecond: 0,
     totalTokens: 0,
+    inputTokens: 0,
+    outputTokens: 0,
     modelName: ''
   });
 

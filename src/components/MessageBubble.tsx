@@ -201,6 +201,26 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                     );
                   }
                   return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '2px', borderRadius: '2rem', paddingLeft: '10px', paddingRight: '10px' }}>{children}</code>;
+                },
+                // Custom link component to handle long URLs
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                a({node, children, href, ...props}: any) {
+                  return (
+                    <a 
+                      href={href} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        textDecoration: 'underline',
+                        color: 'rgba(71, 89, 255, 0.88)'
+                      }}
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  );
                 }
               }}
             >
