@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Message } from '@/lib/types';
 import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -96,15 +96,16 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
   }, [message.content, isUser]);
 
   return (
-    <div className="flex flex-col">
+    <motion.div layout className="flex flex-col">
       {/* Think content displayed as a dropdown above the message bubble */}
       {thinkContent && !isUser && (
         <motion.div
+          layout
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
           className="flex justify-start mb-1"
-          style={{ padding: '0.5rem 1rem' }}
+          style={{ padding: '0.5rem 1rem'}}
         >
           <div 
             className="bg-gray-800 rounded-md overflow-hidden"
@@ -113,10 +114,10 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
             {/* Dropdown header - styled like code block header */}
             <button 
               onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
-              className="model-button w-full flex items-center justify-between px-3 py-2"
+              className="model-button flex items-center justify-between px-3 py-2"
             >
               <div className="flex items-center text">
-                <span>Thinking...</span>
+                {displayContent === "" ? (<span>Thinking...</span>) : (<span>Thoughts</span>)}
               </div>
               {isThinkingExpanded ? 
                 <ChevronUp className="text" size={16} /> : 
@@ -125,26 +126,38 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
             </button>
             
             {/* Dropdown content */}
-            {isThinkingExpanded && (
-              <div 
-                className="font-mono bg-gray-900 text-gray-300 overflow-auto rounded-b-md"
-                style={{ 
-                  padding: '0.75rem 1rem', 
-                  maxHeight: '400px',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.1)' 
-                }}
-              >
-                <pre className="whitespace-pre-wrap">
-                  <code>{thinkContent}</code>
-                </pre>
-              </div>
-            )}
+            <AnimatePresence>
+              {isThinkingExpanded && (
+                <motion.div
+                  key="thinking-content"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div
+                    className="font-mono text-gray-300 overflow-auto rounded-b-md"
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: 'rgba(50, 50, 50, 0.3)',
+                      borderRadius: '2rem',
+                    }}
+                  >
+                    <pre className="whitespace-pre-wrap">
+                      <code>{thinkContent}</code>
+                    </pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}
 
       {/* Regular message bubble */}
       {displayContent !== '' && (<motion.div
+        layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -200,7 +213,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                       </div>
                     );
                   }
-                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '2px', borderRadius: '2rem', paddingLeft: '10px', paddingRight: '10px' }}>{children}</code>;
+                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1px', borderRadius: '2rem', paddingLeft: '10px', paddingRight: '10px' }}>{children}</code>;
                 },
                 // Custom link component to handle long URLs
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,6 +242,6 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
           </div>
         </div>
       </motion.div>)}
-    </div>
+    </motion.div>
   );
 }

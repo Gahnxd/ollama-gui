@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { BarChart2, HomeIcon } from 'lucide-react';
 import Chat from '@/components/Chat';
 import { LLMStats } from '@/lib/types';
@@ -11,15 +11,7 @@ import ModelSelector from '@/components/ModelSelector';
 export default function HomePage() {
   const [model, setModel] = useState('');
   
-  // Update model name in stats when model changes
-  useEffect(() => {
-    if (model) {
-      setStats(prevStats => ({
-        ...prevStats,
-        modelName: model
-      }));
-    }
-  }, [model]);
+
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState<LLMStats>({
     tokensPerSecond: 0,
@@ -28,6 +20,21 @@ export default function HomePage() {
     outputTokens: 0,
     modelName: ''
   });
+
+  const handleSelectModel = (selectedModel: string) => {
+    setModel(selectedModel);
+    setStats({
+      tokensPerSecond: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      modelName: selectedModel,
+    });
+  };
+
+  const handleNewStats = useCallback((newStats: LLMStats) => {
+    setStats(newStats);
+  }, []);
 
   return (
     <div className="relative h-screen w-full bg-background overflow-hidden">
@@ -56,7 +63,7 @@ export default function HomePage() {
             {/* Main content with chat and stats sidebar */}
             <div className="flex flex-1 overflow-hidden">
               <div className="flex-1 overflow-auto">
-                <Chat model={model} onNewStats={setStats} />
+                <Chat model={model} onNewStats={handleNewStats} />
               </div>
               
               {showStats && (
@@ -82,7 +89,7 @@ export default function HomePage() {
               
               <div className="w-full" style={{ maxWidth: '720px' }}>
                 {/* Dynamically load models from Ollama API */}
-                <ModelSelector onSelectModel={setModel} />
+                <ModelSelector onSelectModel={handleSelectModel} />
               </div>
             </div>
           </div>

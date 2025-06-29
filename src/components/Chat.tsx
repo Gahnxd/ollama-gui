@@ -6,6 +6,7 @@ import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import { motion } from 'framer-motion';
 
+
 interface ChatProps {
   model: string;
   onNewStats: (stats: LLMStats) => void;
@@ -18,17 +19,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Reset stats when component loads
-  useEffect(() => {
-    // Reset all stats to initial values
-    onNewStats({
-      tokensPerSecond: 0,
-      totalTokens: 0,
-      inputTokens: 0,
-      outputTokens: 0,
-      modelName: model
-    });
-  }, [model, onNewStats]);
+
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -36,7 +27,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     }
   }, [messages, isTyping]);
 
-  const handleSend = async () => {
+    const handleSend = async () => {
     if (!input.trim() || !model) return;
 
     const userMessage: Message = { role: 'user', content: input };
@@ -44,10 +35,10 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     setInput('');
     setIsTyping(true);
 
-    const response = await fetch('http://localhost:11434/api/chat', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: [...messages, userMessage], stream: true }),
+      body: JSON.stringify({ model, messages: [...messages, userMessage] }),
     });
 
     if (!response.body) {
@@ -60,46 +51,37 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     let assistantMessage = '';
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
     
-    // Initialize stats tracking
     const startTime = performance.now();
     let inputTokens = 0;
     let outputTokens = 0;
     let totalEvalDuration = 0;
     
-    // Function to update all stats with only accurate information
     const updateAllStats = (parsed: {
       eval_count?: number;
       eval_duration?: number;
       prompt_eval_count?: number;
       prompt_eval_duration?: number;
-      total_duration?: number;
-      load_duration?: number;
-      [key: string]: number | string | boolean | undefined;
     }) => {
       let tokensPerSecond = 0;
-      if (parsed.prompt_eval_count && parsed.prompt_eval_duration && parsed.prompt_eval_duration > 0) {
+      if (parsed.prompt_eval_count && parsed.prompt_eval_duration) {
         inputTokens = parsed.prompt_eval_count;
       }
-      if (parsed.eval_count && parsed.eval_duration && parsed.eval_duration > 0) {
-        // Use the actual data from the API
-        outputTokens += parsed.eval_count;
-        totalEvalDuration += parsed.eval_duration;
-        // Convert nanoseconds to seconds (1e9 nanoseconds = 1 second)
-        tokensPerSecond = outputTokens / (totalEvalDuration / 1e9);
+      if (parsed.eval_count && parsed.eval_duration) {
+        outputTokens = parsed.eval_count;
+        totalEvalDuration = parsed.eval_duration;
+        if (totalEvalDuration > 0) {
+          tokensPerSecond = outputTokens / (totalEvalDuration / 1e9);
+        }
       } else if (outputTokens > 0) {
-        // Fallback to a simple calculation based on elapsed time
         const elapsedSeconds = (performance.now() - startTime) / 1000;
         if (elapsedSeconds > 0) {
           tokensPerSecond = outputTokens / elapsedSeconds;
         }
       }
       
-      // Ensure tokensPerSecond is a valid number and round to 2 decimal places
       tokensPerSecond = isNaN(tokensPerSecond) ? 0 : Math.round(tokensPerSecond * 100) / 100;
-            
       const totalTokens = outputTokens + inputTokens;
       
-      // Update all stats
       onNewStats({
         tokensPerSecond,
         totalTokens,
@@ -109,6 +91,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       });
     };
 
+    let buffer = '';
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
@@ -116,29 +99,30 @@ export default function Chat({ model, onNewStats }: ChatProps) {
         break;
       }
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(line => line.trim() !== '');
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
+        if (line.trim() === '') continue;
         const parsed = JSON.parse(line);
+        
+        if (parsed.message && parsed.message.content) {
+          assistantMessage += parsed.message.content;
+          outputTokens++; 
+          setMessages((prev) =>
+            prev.map((msg, i) =>
+              i === prev.length - 1
+                ? { ...msg, content: assistantMessage }
+                : msg
+            )
+          );
+        }
+
         if (parsed.done) {
-          // Update with final stats from API
           updateAllStats(parsed);
-        } else {
-          // Count tokens in this chunk (rough estimate)
-          const content = parsed.message.content;
-          
-          // Update message content
-          assistantMessage += content;
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = { 
-              role: 'assistant', 
-              content: assistantMessage
-            };
-            return newMessages;
-          });
-          
+          setIsTyping(false);
+          return;
         }
       }
     }
