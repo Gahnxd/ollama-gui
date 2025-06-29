@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, LLMStats } from '@/lib/types';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 
 
 interface ChatProps {
@@ -20,6 +20,8 @@ export default function Chat({ model, onNewStats }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const textareaAnimation = useAnimation();
+  const shineAnimation = useAnimation();
 
 
 
@@ -199,9 +201,37 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       )}
       
       <div className="p-6 flex justify-center items-center">
-        <div style={{ width: '700px', marginBottom: '50px', marginTop: '50px'}}>
-          <div className="w-full border overflow-hidden" style={{ borderRadius: '2rem', maxHeight: '144px', backgroundColor: 'rgba(100, 100, 100, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(8px)'}}>
+        <motion.div
+          animate={textareaAnimation}
+          style={{ width: '700px', marginBottom: '50px', marginTop: '50px'}}
+        >
+          <div className="w-full border overflow-hidden" style={{ position: 'relative', overflow: 'hidden', borderRadius: '2rem', maxHeight: '144px', backgroundColor: 'rgba(100, 100, 100, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(8px)'}}>
+            <motion.div
+              animate={shineAnimation}
+              onAnimationComplete={() => shineAnimation.set({ x: '-100%' })}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                background: 'linear-gradient(to right, transparent 20%, rgba(255, 255, 255, 0.05) 30%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.05) 70%, transparent 80%)',
+                x: '-100%',
+                zIndex: 0,
+              }}
+            />
             <textarea
+              onFocus={() => {
+                textareaAnimation.start({
+                  scale: [1, 1.03, 1],
+                  transition: { duration: 0.3, ease: 'easeOut' }
+                });
+                shineAnimation.start({
+                  x: '100%',
+                  transition: { duration: 0.6, ease: 'easeInOut' }
+                });
+              }}
               ref={(el) => {
                 textareaRef.current = el;
                 if (el) {
@@ -263,12 +293,14 @@ export default function Chat({ model, onNewStats }: ChatProps) {
                 margin: '0 auto',
                 border: 'none',
                 lineHeight: '24px',    /* Consistent line height */
-                transition: 'height 0.1s ease'
+                transition: 'height 0.1s ease',
+                position: 'relative',
+                zIndex: 1
               }}
               rows={1}
             />
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
