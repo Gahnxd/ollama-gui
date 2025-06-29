@@ -75,6 +75,14 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     const handleSend = async () => {
     if (!input.trim() || !model) return;
 
+    // Reset stats when a new message is sent
+    onNewStats({
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      tokensPerSecond: 0,
+    });
+
     // Re-enable auto-scrolling when a new message is sent
     setUserHasScrolled(false);
 
