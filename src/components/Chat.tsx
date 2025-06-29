@@ -18,17 +18,36 @@ export default function Chat({ model, onNewStats }: ChatProps) {
   const [isTyping, setIsTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [userHasScrolled, setUserHasScrolled] = useState(false);
 
 
+
+  const handleScroll = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 1; // +1 for tolerance
+      setUserHasScrolled(!isAtBottom);
+    }
+  };
 
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    const container = chatContainerRef.current;
+    if (container) {
+      // Scroll to bottom only if user hasn't scrolled up
+      if (!userHasScrolled) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     }
-  }, [messages, isTyping]);
+  }, [messages, isTyping, userHasScrolled]);
 
     const handleSend = async () => {
     if (!input.trim() || !model) return;
+
+    // Re-enable auto-scrolling when a new message is sent
+    setUserHasScrolled(false);
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -143,7 +162,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
           </motion.div>
         </div>
       ) : (
-        <div ref={chatContainerRef} className="flex-1 p-4 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+        <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 p-4 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           {messages.map((msg, i) => (
             <MessageBubble key={i} message={msg} isUser={msg.role === 'user'} />
           ))}
