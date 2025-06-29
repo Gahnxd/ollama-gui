@@ -18,6 +18,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
   const [isTyping, setIsTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
 
 
@@ -42,6 +43,32 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       }
     }
   }, [messages, isTyping, userHasScrolled]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      
+      if (event.key.length === 1 || event.key === 'Backspace') {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
 
     const handleSend = async () => {
     if (!input.trim() || !model) return;
@@ -173,9 +200,10 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       
       <div className="p-6 flex justify-center items-center">
         <div style={{ width: '700px', marginBottom: '50px', marginTop: '50px'}}>
-          <div className="w-full bg-black/30 border border-white/10 overflow-hidden" style={{ borderRadius: '2rem', maxHeight: '144px'}}>
+          <div className="w-full border overflow-hidden" style={{ borderRadius: '2rem', maxHeight: '144px', backgroundColor: 'rgba(100, 100, 100, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(8px)'}}>
             <textarea
               ref={(el) => {
+                textareaRef.current = el;
                 if (el) {
                   // Initial height adjustment
                   setTimeout(() => {
@@ -224,7 +252,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
               className="bg-transparent text-white w-full resize-none focus:outline-none"
               placeholder="Ask me anything"
               style={{ 
-                color: 'rgba(255, 255, 255, 0.90)', 
+                color: 'rgba(255, 255, 255, 0.90)',
                 padding: '1em 1em',
                 minHeight: '24px',     /* Start with single line height */
                 maxHeight: '144px',    /* Max height (6 lines at 24px) */
