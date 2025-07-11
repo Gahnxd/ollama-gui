@@ -217,7 +217,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
           style={{ position: 'relative', borderRadius: '2rem', minWidth: '20%', maxWidth: '48%', width: 'auto', height: 'auto', minHeight: 'auto'}}
         >
           <div style={{ padding: '1rem 1rem'}}>
-            <div className="prose prose-invert prose-sm max-w-full">
+            <div className="prose prose-invert prose-sm w-full" style={{ maxWidth: '100%', overflowWrap: 'break-word' }}>
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -235,7 +235,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                     if (!isInline) {
                       // This is a code block (not inline code)
                       return (
-                        <div className="relative w-90 overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem' }}>
+                        <div className="relative overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem', maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'break-word', overflowX: 'hidden', width: 'fit-content' }}>
                           <motion.div 
                             onClick={() => handleCopyCode(codeContent)}
                             className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer rounded-full"
@@ -261,18 +261,37 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                               <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
                             </filter>
                           </svg> 
-                          <SyntaxHighlighter
-                            language={match ? match[1] : 'bash'}
-                            style={vscDarkPlus}
-                            customStyle={{ 
-                              background: 'transparent', 
-                              padding: '0.5rem', 
-                              paddingRight: '2.5rem' 
-                            }}
-                            wrapLongLines={true}
-                          >
-                            {codeContent}
-                          </SyntaxHighlighter>
+                          <div style={{ overflow: 'hidden', maxWidth: '100%', overflowX: 'hidden' }}>
+                            <SyntaxHighlighter
+                              language={match ? match[1] : 'bash'}
+                              style={vscDarkPlus}
+                              customStyle={{ 
+                                background: 'transparent',
+                                padding: '0.5rem',
+                                paddingRight: '40px',
+                                wordWrap: 'break-word',
+                                whiteSpace: 'pre-wrap',
+                                overflowWrap: 'break-word',
+                                wordBreak: 'break-word',
+                                width: 'auto',
+                                maxWidth: '100%',
+                                display: 'block',
+                                overflow: 'hidden',
+                                overflowX: 'hidden'
+                              }}
+                              wrapLongLines={true}
+                              wrapLines={true}
+                              codeTagProps={{
+                                style: {
+                                  wordBreak: 'break-word',
+                                  whiteSpace: 'pre-wrap',
+                                  overflowWrap: 'break-word'
+                                }
+                              }}
+                            >
+                              {codeContent}
+                            </SyntaxHighlighter>
+                          </div>
                         </div>
                       );
                     }
