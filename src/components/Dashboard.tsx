@@ -8,7 +8,7 @@ interface DashboardProps {
 
 export default function Dashboard({ stats }: DashboardProps) {
   return (
-    <div className="stats-panel h-full w-full grid grid-cols-1 auto-rows-auto bg-black text-white">
+    <div className="stats-panel h-full w-full grid grid-cols-1 auto-rows-auto text-white" style={{ backgroundColor: 'rgba(0, 0, 0, 0)'}}>
       {/* Model ID - Grid Item */}
       <div className="grid grid-cols-1">
         {/* Box top border with corners */}

@@ -59,7 +59,15 @@ export default function ModelSelector({ onSelectModel }: ModelSelectorProps) {
                 <Check size={14} className="text-accent ml-2" />
               )}
             </button>
-          ))}
+            
+          ))}      
+          <svg style={{display: 'none'}}>
+            <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+              <feGaussianBlur in="noise" stdDeviation="0.1" result="blur" />
+              <feDisplacementMap in="SourceGraphic" in2="blur" scale="10" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </svg> 
         </div>
       )}
     </div>

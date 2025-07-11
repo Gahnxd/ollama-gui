@@ -192,7 +192,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="max-w-md"
+            className="max-w-lg"
           >
             <h1 className="text-3xl font-bold mb-2">You are using <span className="text-accent">{model}</span></h1>
             <h2 className="text-1xl mb-8 text-white/80">What&apos;s on your mind?</h2>
@@ -211,9 +211,10 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       <div className="p-6 flex justify-center items-center">
         <motion.div
           animate={textareaAnimation}
-          style={{ width: '700px', marginBottom: '50px', marginTop: '50px'}}
+          className="flex justify-center items-center p-2"
+          style={{width: '700px', marginBottom: '50px', marginTop: '50px'}}
         >
-          <div className="w-full border overflow-hidden" style={{ position: 'relative', overflow: 'hidden', borderRadius: '2rem', maxHeight: '144px', backgroundColor: 'rgba(100, 100, 100, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(8px)'}}>
+          <div className="w-full glassContainer" style={{ position: 'relative', overflow: 'hidden', maxHeight: '144px', height: 'auto', minHeight: '60px' }}>
             <motion.div
               animate={shineAnimation}
               onAnimationComplete={() => shineAnimation.set({ x: '-100%' })}
@@ -310,6 +311,13 @@ export default function Chat({ model, onNewStats }: ChatProps) {
           </div>
         </motion.div>
       </div>
+      <svg style={{ display: 'none' }}>
+      <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+        <feDisplacementMap in="SourceGraphic" in2="blur" scale="50" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </svg>
     </div>
   );
 }

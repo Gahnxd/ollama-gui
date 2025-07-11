@@ -165,8 +165,8 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
         style={{ padding: '0.5rem 1rem'}}
       >
         <div
-          className={`bg-surface/40 border border-white/10`}
-          style={{ borderRadius: '2rem', minWidth: '20%', maxWidth: '48%'}}
+          className={`messageBubbleGlass`}
+          style={{ position: 'relative', borderRadius: '2rem', minWidth: '20%', maxWidth: '48%', width: 'auto', height: 'auto', minHeight: 'auto'}}
         >
           <div className="prose prose-invert prose-sm max-w-full" style={{ padding: '1rem 1rem'}}>
             <ReactMarkdown 
@@ -198,6 +198,13 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                             <Copy size={10}/>
                           }
                         </button>
+                        <svg style={{display: 'none'}}>
+                          <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+                            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                            <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+                            <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
+                          </filter>
+                        </svg> 
                         <SyntaxHighlighter
                           language={match ? match[1] : 'bash'}
                           style={vscDarkPlus}
@@ -213,7 +220,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                       </div>
                     );
                   }
-                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1px', borderRadius: '2rem', paddingLeft: '10px', paddingRight: '10px' }}>{children}</code>;
+                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1px', borderRadius: '2rem', paddingLeft: '8px', paddingRight: '8px' }}>{children}</code>;
                 },
                 // Custom link component to handle long URLs
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -227,7 +234,9 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                         wordBreak: 'break-word',
                         overflowWrap: 'break-word',
                         textDecoration: 'underline',
-                        color: 'rgba(71, 89, 255, 0.88)'
+                        color: 'rgba(91, 108, 255, 0.90)',
+                        position: 'relative',
+                        zIndex: 1
                       }}
                       {...props}
                     >
@@ -242,6 +251,14 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
           </div>
         </div>
       </motion.div>)}
+      
+      <svg style={{ display: 'none' }}>
+        <filter id="message-glass" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+          <feDisplacementMap in="SourceGraphic" in2="blur" scale="80" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
     </motion.div>
   );
 }
