@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Message } from '@/lib/types';
 import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -36,6 +35,8 @@ function AnimatedEllipsis() {
 }
 
 export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
+  // Ref to track the content container's dimensions
+  const contentRef = useRef<HTMLDivElement>(null);
   const [thinkContent, setThinkContent] = useState<string | null>(null);
   const [displayContent, setDisplayContent] = useState<string>(message.content || '');
   const [isThinkingExpanded, setIsThinkingExpanded] = useState<boolean>(false);
@@ -67,6 +68,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
     return () => clearTimeout(timer);
   };
 
+  // Effect to handle content processing
   useEffect(() => {
     // Handle the display of content and think content
     if (message.content) {
@@ -122,15 +124,27 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
     }
   }, [message.content, isUser]);
 
+  // Track the maximum height the container has reached during streaming
+  const [maxHeight, setMaxHeight] = useState<number | null>(null);
+  
+  // Effect to track content height during streaming
+  useEffect(() => {
+    if (message.streaming && contentRef.current) {
+      const currentHeight = contentRef.current.scrollHeight;
+      
+      // Only update if the current height is greater than the previous max
+      setMaxHeight(prev => prev === null || currentHeight > prev ? currentHeight : prev);
+    } else if (!message.streaming) {
+      // Reset when streaming is done
+      setMaxHeight(null);
+    }
+  }, [message.streaming, displayContent]);
+
   return (
-    <motion.div layout className="flex flex-col">
+    <div className="flex flex-col">
       {/* Think content displayed as a dropdown above the message bubble */}
       {thinkContent && !isUser && (
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+          <div
             className="flex justify-start mb-1"
             style={{ padding: '0.5rem 1rem'}}
           >
@@ -139,50 +153,28 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
               style={{ maxWidth: '48%', width: 'fit-content' }}
             >
               {/* Dropdown header - styled like code block header */}
-              <motion.div 
-                className="messageBubbleGlass think-button flex items-center justify-between px-3 py-2 cursor-pointer"
-                onClick={() => handleExpandThinking()}
-                whileTap={{ scale: 0.80 }}
-                animate={{
-                  scale: isThinkingExpanded ? [0.95, 1] : 1
-                }}
-                transition={{
-                  duration: 0.2,
-                  ease: "easeInOut"
-                }}
-              >
-                <div className="flex items-center text">
-                  {displayContent === "" ? (
-                    <span style={{paddingRight: '8px'}}>
-                      Thinking<AnimatedEllipsis />
-                    </span>
-                  ) : (
-                    <span style={{paddingRight: '8px'}}>Thoughts</span>
-                  )}
+                <div 
+                  className="messageBubbleGlass think-button flex items-center justify-between px-3 py-2 cursor-pointer"
+                  onClick={() => handleExpandThinking()}
+                >
+                  <div className="flex items-center text">
+                    {displayContent === "" ? (
+                      <span style={{paddingRight: '8px'}}>
+                        Thinking<AnimatedEllipsis />
+                      </span>
+                    ) : (
+                      <span style={{paddingRight: '8px'}}>Thoughts</span>
+                    )}
+                  </div>
+                  {isThinkingExpanded ? 
+                    <ChevronUp className="text" size={16} /> : 
+                    <ChevronDown className="text" size={16} />
+                  }
                 </div>
-                {isThinkingExpanded ? 
-                  <ChevronUp className="text" size={16} /> : 
-                  <ChevronDown className="text" size={16} />
-                }
-              </motion.div>
-              <svg style={{display: 'none'}}>
-                <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
-                  <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
-                  <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
-                </filter>
-              </svg> 
-              
-              {/* Dropdown content */}
-              <AnimatePresence>
+                {/* Dropdown content */}
                 {isThinkingExpanded && (
-                  <motion.div
-                    key="thinking-content"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    style={{ overflow: 'hidden', paddingTop: '5px' }}
+                  <div
+                    style={{ paddingTop: '5px' }}
                   >
                     <div
                       className="font-mono text-gray-300 overflow-auto rounded-b-md"
@@ -196,28 +188,34 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                         <code>{thinkContent}</code>
                       </pre>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
             </div>
-          </motion.div>
+          </div>
       )}
 
       {/* Regular message bubble */}
-      {displayContent !== '' && (<motion.div
-        layout
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      {displayContent !== '' && (<div
         className={`flex my-1 ${isUser ? 'justify-end' : 'justify-start'}`}
         style={{ padding: '0.5rem 1rem'}}
       >
         <div
           className={`messageBubbleGlass`}
-          style={{ position: 'relative', borderRadius: '2rem', minWidth: '20%', maxWidth: '48%', width: 'auto', height: 'auto', minHeight: 'auto'}}
+          style={{ position: 'relative', borderRadius: '2rem', minWidth: '20%', maxWidth: '48%', width: 'auto', height: 'auto'}}
         >
-          <div style={{ padding: '1rem 1rem'}}>
-            <div className="prose prose-invert prose-sm w-full" style={{ maxWidth: '100%', overflowWrap: 'break-word' }}>
+          <div style={{ padding: '1rem 1rem', position: 'relative'}}>
+            <div 
+              ref={contentRef}
+              className="prose prose-invert prose-sm w-full" 
+              style={{ 
+                maxWidth: '100%', 
+                overflowWrap: 'break-word',
+                minHeight: message.streaming && maxHeight ? `${maxHeight}px` : 'auto',
+                position: 'relative',
+                zIndex: 1,
+                transition: 'none',
+                overflow: 'visible'
+              }}>
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -236,24 +234,17 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                       // This is a code block (not inline code)
                       return (
                         <div className="relative overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem', maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'break-word', overflowX: 'hidden', width: 'fit-content' }}>
-                          <motion.div 
+                          <div 
                             onClick={() => handleCopyCode(codeContent)}
                             className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer rounded-full"
                             aria-label="Copy code"
                             style={{ color: 'white', padding: '0.15rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
-                            animate={{
-                              scale: copiedCode === codeContent ? [0.7, 1] : 1
-                            }}
-                            transition={{
-                              duration: 0.2,
-                              ease: "easeInOut"
-                            }}
                           >
                             {copiedCode === codeContent ? 
                               <Check size={12}/> : 
                               <Copy size={12}/>
                             }
-                          </motion.div>
+                          </div>
                           <svg style={{display: 'none'}}>
                             <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
                               <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
@@ -333,7 +324,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
             </div>
           </div>
         </div>
-      </motion.div>)}
-    </motion.div>
+      </div>)}
+    </div>
   );
 }

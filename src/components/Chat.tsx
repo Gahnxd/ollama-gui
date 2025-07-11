@@ -114,7 +114,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     // Re-enable auto-scrolling when a new message is sent
     setUserHasScrolled(false);
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: input, id: `user-${Date.now()}` };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
@@ -133,7 +133,8 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let assistantMessage = '';
-    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+    const assistantMessageId = `assistant-${Date.now()}`;
+    setMessages((prev) => [...prev, { role: 'assistant', content: '', id: assistantMessageId, streaming: true }]);
     
     const startTime = performance.now();
     let inputTokens = 0;
@@ -197,7 +198,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
           setMessages((prev) =>
             prev.map((msg, i) =>
               i === prev.length - 1
-                ? { ...msg, content: assistantMessage }
+                ? { ...msg, content: assistantMessage, streaming: true }
                 : msg
             )
           );
@@ -206,6 +207,14 @@ export default function Chat({ model, onNewStats }: ChatProps) {
         if (parsed.done) {
           updateAllStats(parsed);
           setIsTyping(false);
+          // Mark message as no longer streaming when done
+          setMessages((prev) =>
+            prev.map((msg, i) =>
+              i === prev.length - 1
+                ? { ...msg, streaming: false }
+                : msg
+            )
+          );
           return;
         }
       }
