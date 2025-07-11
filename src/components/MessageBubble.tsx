@@ -124,6 +124,13 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                 <ChevronDown className="text" size={16} />
               }
             </button>
+            <svg style={{display: 'none'}}>
+              <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+                <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </svg> 
             
             {/* Dropdown content */}
             <AnimatePresence>
@@ -134,7 +141,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  style={{ overflow: 'hidden' }}
+                  style={{ overflow: 'hidden', paddingTop: '5px' }}
                 >
                   <div
                     className="font-mono text-gray-300 overflow-auto rounded-b-md"
