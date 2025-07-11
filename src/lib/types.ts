@@ -18,3 +18,7 @@ export interface LLMStats {
   outputTokens: number;
   modelName?: string;
 }
+
+export interface ModelChatHistory {
+  [modelName: string]: Message[];
+}

@@ -3,14 +3,14 @@
 import { useState, useCallback } from 'react';
 import { BarChart2, HomeIcon } from 'lucide-react';
 import Chat from '@/components/Chat';
-import { LLMStats } from '@/lib/types';
+import { LLMStats, ModelChatHistory } from '@/lib/types';
 import { motion } from 'framer-motion';
 import Dashboard from '@/components/Dashboard';
 import ModelSelector from '@/components/ModelSelector';
 
 export default function HomePage() {
   const [model, setModel] = useState('');
-  
+  const [chatHistory, setChatHistory] = useState<ModelChatHistory>({});
 
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState<LLMStats>({
@@ -63,7 +63,12 @@ export default function HomePage() {
             {/* Main content with chat and stats sidebar */}
             <div className="flex flex-1 overflow-hidden">
               <div className="flex-1 overflow-auto">
-                <Chat model={model} onNewStats={handleNewStats} />
+                <Chat 
+                  model={model} 
+                  onNewStats={handleNewStats}
+                  chatHistory={chatHistory}
+                  setChatHistory={setChatHistory} 
+                />
               </div>
               
               {showStats && (

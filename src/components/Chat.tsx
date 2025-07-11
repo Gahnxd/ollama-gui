@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Message, LLMStats } from '@/lib/types';
+import { Message, LLMStats, ModelChatHistory } from '@/lib/types';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import { motion, useAnimation } from 'framer-motion';
@@ -10,9 +10,11 @@ import { motion, useAnimation } from 'framer-motion';
 interface ChatProps {
   model: string;
   onNewStats: (stats: LLMStats) => void;
+  chatHistory: ModelChatHistory;
+  setChatHistory: React.Dispatch<React.SetStateAction<ModelChatHistory>>;
 }
 
-export default function Chat({ model, onNewStats }: ChatProps) {
+export default function Chat({ model, onNewStats, chatHistory, setChatHistory }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -43,6 +45,19 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       }
     }
   }, [messages, isTyping, userHasScrolled]);
+
+  // Load messages when model changes
+  useEffect(() => {
+    if (model) {
+      // Load existing messages for this model if they exist
+      const existingMessages = chatHistory[model] || [];
+      setMessages(existingMessages);
+      // Reset typing state when switching models
+      setIsTyping(false);
+      // Reset user scroll state
+      setUserHasScrolled(false);
+    }
+  }, [model, chatHistory]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -115,7 +130,17 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     setUserHasScrolled(false);
 
     const userMessage: Message = { role: 'user', content: input, id: `user-${Date.now()}` };
-    setMessages((prev) => [...prev, userMessage]);
+    
+    // Update messages for the current model
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    
+    // Update chat history for the current model
+    setChatHistory(prevHistory => ({
+      ...prevHistory,
+      [model]: updatedMessages
+    }));
+    
     setInput('');
     setIsTyping(true);
 
@@ -195,26 +220,44 @@ export default function Chat({ model, onNewStats }: ChatProps) {
         if (parsed.message && parsed.message.content) {
           assistantMessage += parsed.message.content;
           outputTokens++; 
-          setMessages((prev) =>
-            prev.map((msg, i) =>
+          // Update messages with streaming content
+          setMessages((prev) => {
+            const updatedMessages = prev.map((msg, i) =>
               i === prev.length - 1
                 ? { ...msg, content: assistantMessage, streaming: true }
                 : msg
-            )
-          );
+            );
+            
+            // Update chat history for the current model with streaming content
+            setChatHistory(prevHistory => ({
+              ...prevHistory,
+              [model]: updatedMessages
+            }));
+            
+            return updatedMessages;
+          });
         }
 
         if (parsed.done) {
           updateAllStats(parsed);
           setIsTyping(false);
           // Mark message as no longer streaming when done
-          setMessages((prev) =>
-            prev.map((msg, i) =>
+          // Mark message as no longer streaming when done
+          setMessages((prev) => {
+            const updatedMessages = prev.map((msg, i) =>
               i === prev.length - 1
                 ? { ...msg, streaming: false }
                 : msg
-            )
-          );
+            );
+            
+            // Update chat history for the current model with completed message
+            setChatHistory(prevHistory => ({
+              ...prevHistory,
+              [model]: updatedMessages
+            }));
+            
+            return updatedMessages;
+          });
           return;
         }
       }
