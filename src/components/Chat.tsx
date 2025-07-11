@@ -261,12 +261,12 @@ export default function Chat({ model, onNewStats }: ChatProps) {
             <textarea
               onFocus={() => {
                 textareaAnimation.start({
-                  scale: [1, 1.03, 1],
-                  transition: { duration: 0.3, ease: 'easeOut' }
+                  scale: [0.99, 0.98, 1],
+                  transition: { duration: 0.3, ease: 'easeInOut' }
                 });
                 shineAnimation.start({
                   x: '100%',
-                  transition: { duration: 0.6, ease: 'easeInOut' }
+                  transition: { duration: 0.3, ease: 'easeInOut' }
                 });
               }}
               ref={(el) => {

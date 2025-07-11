@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Model } from '@/lib/types';
-import LoadingBar from './LoadingBar';
 import { Check } from 'lucide-react';
+import { motion } from 'framer-motion';
+import LoadingBar from './LoadingBar';
+import { Model } from '@/lib/types';
 
 interface ModelSelectorProps {
   onSelectModel: (model: string) => void;
@@ -32,8 +33,11 @@ export default function ModelSelector({ onSelectModel }: ModelSelectorProps) {
   }, []);
 
   const handleSelectModel = (model: Model) => {
-    onSelectModel(model.name);
-    setSelectedModel(model);
+    const timer = setTimeout(() => {
+      onSelectModel(model.name);
+      setSelectedModel(model);
+    }, 100);
+    return () => clearTimeout(timer);
   };
 
   return (
@@ -43,7 +47,8 @@ export default function ModelSelector({ onSelectModel }: ModelSelectorProps) {
       ) : (
         <div className="flex flex-wrap justify-center" style={{ gap: '12px' }}>
           {models.map((model, index) => (
-            <div className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer"
+            <motion.div 
+                className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer"
                 key={model.name || index}
                 onClick={() => handleSelectModel(model)}
                 style={{
@@ -54,12 +59,19 @@ export default function ModelSelector({ onSelectModel }: ModelSelectorProps) {
                   paddingTop: '0.5rem',
                   paddingBottom: '0.5rem'
                 }}
+                whileTap={{ 
+                  scale: 0.4
+                }}
+                transition={{
+                  duration: 0.1,
+                  ease: "easeInOut"
+                }}
               >
                 <span className="text">{model.name}</span>
                 {selectedModel?.name === model.name && (
                   <Check size={14} className="text-accent ml-2" />
                 )}
-            </div>
+            </motion.div>
           ))}   
           <svg style={{display: 'none'}}>
             <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">

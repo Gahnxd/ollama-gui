@@ -62,7 +62,6 @@ code {
   align-items: center;
   width: auto;
   max-width: fit-content;
-  transition: all 0.2s ease;
   backdrop-filter: blur(8px);
 }
 .think-button:hover {

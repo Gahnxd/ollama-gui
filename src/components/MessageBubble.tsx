@@ -60,6 +60,13 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
     }, 500);
   };
 
+  const handleExpandThinking = () => {
+    const timer = setTimeout(() => {
+    }, 300);
+    setIsThinkingExpanded(!isThinkingExpanded);
+    return () => clearTimeout(timer);
+  };
+
   useEffect(() => {
     // Handle the display of content and think content
     if (message.content) {
@@ -132,9 +139,17 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
               style={{ maxWidth: '48%', width: 'fit-content' }}
             >
               {/* Dropdown header - styled like code block header */}
-              <div 
+              <motion.div 
                 className="messageBubbleGlass think-button flex items-center justify-between px-3 py-2 cursor-pointer"
-                onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+                onClick={() => handleExpandThinking()}
+                whileTap={{ scale: 0.80 }}
+                animate={{
+                  scale: isThinkingExpanded ? [0.95, 1] : 1
+                }}
+                transition={{
+                  duration: 0.2,
+                  ease: "easeInOut"
+                }}
               >
                 <div className="flex items-center text">
                   {displayContent === "" ? (
@@ -149,7 +164,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                   <ChevronUp className="text" size={16} /> : 
                   <ChevronDown className="text" size={16} />
                 }
-              </div>
+              </motion.div>
               <svg style={{display: 'none'}}>
                 <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
                   <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
@@ -221,17 +236,24 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                       // This is a code block (not inline code)
                       return (
                         <div className="relative w-90 overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem' }}>
-                          <button 
+                          <motion.div 
                             onClick={() => handleCopyCode(codeContent)}
-                            className="model-button rounded-full"
+                            className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer rounded-full"
                             aria-label="Copy code"
-                            style={{ color: 'white', padding: '0.25rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
+                            style={{ color: 'white', padding: '0.15rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
+                            animate={{
+                              scale: copiedCode === codeContent ? [0.7, 1] : 1
+                            }}
+                            transition={{
+                              duration: 0.2,
+                              ease: "easeInOut"
+                            }}
                           >
                             {copiedCode === codeContent ? 
-                              <Check size={10}/> : 
-                              <Copy size={10}/>
+                              <Check size={12}/> : 
+                              <Copy size={12}/>
                             }
-                          </button>
+                          </motion.div>
                           <svg style={{display: 'none'}}>
                             <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
                               <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
