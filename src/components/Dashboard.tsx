@@ -1,9 +1,26 @@
 'use client';
 
 import { LLMStats } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
 interface DashboardProps {
   stats: LLMStats;
+}
+
+// Braille spinner component
+function BrailleSpinner() {
+  const brailleChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const [index, setIndex] = useState(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prevIndex) => (prevIndex + 1) % brailleChars.length);
+    }, 100);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  return <span className="text-accent">{brailleChars[index]}</span>;
 }
 
 export default function Dashboard({ stats }: DashboardProps) {
@@ -47,15 +64,21 @@ export default function Dashboard({ stats }: DashboardProps) {
         <div className="grid grid-cols-3 justify-between px-8 py-2">
           <div className="grid grid-rows-2 items-center justify-center text-center">
             <div className="text-sm text-gray-500">Total</div>
-            <div className="text-3xl font-mono text-white">{stats.totalTokens}</div>
+            <div className="text-3xl font-mono text-white">
+              {stats.totalTokens === 0 ? <BrailleSpinner /> : stats.totalTokens}
+            </div>
           </div>
           <div className="grid grid-rows-2 items-center justify-center text-center">
             <div className="text-sm text-gray-500">Input</div>
-            <div className="text-3xl font-mono text-white">{stats.inputTokens}</div>
+            <div className="text-3xl font-mono text-white">
+              {stats.inputTokens === 0 ? <BrailleSpinner /> : stats.inputTokens}
+            </div>
           </div>
           <div className="grid grid-rows-2 items-center justify-center text-center">
             <div className="text-sm text-gray-500">Output</div>
-            <div className="text-3xl font-mono text-white">{stats.outputTokens}</div>
+            <div className="text-3xl font-mono text-white">
+              {stats.outputTokens === 0 ? <BrailleSpinner /> : stats.outputTokens}
+            </div>
           </div>
         </div>
 
@@ -80,8 +103,13 @@ export default function Dashboard({ stats }: DashboardProps) {
         
         <div className="px-4 py-4 flex items-center justify-center">
           <div className="text-3xl font-mono text-white">
-            <span className="text-accent">{stats.tokensPerSecond.toFixed(2)}</span>
-            <span className="text-gray-500 text-xl"> tokens/sec</span>
+            {stats.tokensPerSecond === 0 ? 
+              <BrailleSpinner /> : 
+              <>
+                <span className="text-accent">{stats.tokensPerSecond.toFixed(2)}</span>
+                <span className="text-gray-500 text-xl"> tokens/sec</span>
+              </>
+            }
           </div>
         </div>
         

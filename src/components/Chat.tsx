@@ -108,6 +108,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       outputTokens: 0,
       totalTokens: 0,
       tokensPerSecond: 0,
+      modelName: model
     });
 
     // Re-enable auto-scrolling when a new message is sent

@@ -33,20 +33,17 @@ code {
 /* Custom Button Styles */
 .model-button {
   background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
-  padding: 8px 16px;
+  padding: 2.2px 3px;
   display: inline-flex;
   align-items: center;
   width: auto;
-  max-width: 100%;
-  box-sizing: border-box;
   gap: 12px;
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
 }
 .model-button:hover {
-  background-color: rgba(255, 255, 255, 0.07);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .model-button .icon {
@@ -54,6 +51,29 @@ code {
 }
 
 .model-button .text {
+  color: white;
+  font-size: 14px;
+}
+
+.think-button {
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: fit-content;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+.think-button:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.think-button .icon {
+  font-size: 18px;
+}
+
+.think-button .text {
   color: white;
   font-size: 14px;
 }

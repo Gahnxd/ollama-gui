@@ -43,26 +43,31 @@ export default function ModelSelector({ onSelectModel }: ModelSelectorProps) {
       ) : (
         <div className="flex flex-wrap justify-center" style={{ gap: '12px' }}>
           {models.map((model, index) => (
-            <button
-              key={model.name || index}
-              onClick={() => handleSelectModel(model)}
-              className={`model-button inline-flex items-center justify-center ${selectedModel?.name === model.name ? 'border-accent' : ''}`}
-              style={{
-                justifyContent: 'center',
-                width: 'calc(33.33% - 16px)',
-                minWidth: '150px',
-                maxWidth: 'fit-content',
-                paddingTop: '0.5rem',
-                paddingBottom: '0.5rem'
-              }}
-            >
-              <span className="text">{model.name}</span>
-              {selectedModel?.name === model.name && (
-                <Check size={14} className="text-accent ml-2" />
-              )}
-            </button>
-            
-          ))}      
+            <div className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer"
+                key={model.name || index}
+                onClick={() => handleSelectModel(model)}
+                style={{
+                  justifyContent: 'center',
+                  width: 'calc(33.33% - 16px)',
+                  minWidth: '150px',
+                  maxWidth: 'fit-content',
+                  paddingTop: '0.5rem',
+                  paddingBottom: '0.5rem'
+                }}
+              >
+                <span className="text">{model.name}</span>
+                {selectedModel?.name === model.name && (
+                  <Check size={14} className="text-accent ml-2" />
+                )}
+            </div>
+          ))}   
+          <svg style={{display: 'none'}}>
+            <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+              <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+              <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </svg>    
         </div>
       )}
     </div>

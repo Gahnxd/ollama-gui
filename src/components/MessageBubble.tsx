@@ -99,67 +99,67 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
     <motion.div layout className="flex flex-col">
       {/* Think content displayed as a dropdown above the message bubble */}
       {thinkContent && !isUser && (
-        <motion.div
-          layout
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex justify-start mb-1"
-          style={{ padding: '0.5rem 1rem'}}
-        >
-          <div 
-            className="bg-gray-800 rounded-md overflow-hidden"
-            style={{ maxWidth: '48%', width: 'fit-content' }}
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex justify-start mb-1"
+            style={{ padding: '0.5rem 1rem'}}
           >
-            {/* Dropdown header - styled like code block header */}
-            <button 
-              onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
-              className="model-button flex items-center justify-between px-3 py-2"
+            <div 
+              className="bg-gray-800 rounded-md overflow-hidden"
+              style={{ maxWidth: '48%', width: 'fit-content' }}
             >
-              <div className="flex items-center text">
-                {displayContent === "" ? (<span>Thinking...</span>) : (<span>Thoughts</span>)}
+              {/* Dropdown header - styled like code block header */}
+              <div 
+                className="messageBubbleGlass think-button flex items-center justify-between px-3 py-2 cursor-pointer"
+                onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+              >
+                <div className="flex items-center text">
+                  {displayContent === "" ? (<span style={{paddingRight: '8px'}}>Thinking...</span>) : (<span style={{paddingRight: '8px'}}>Thoughts</span>)}
+                </div>
+                {isThinkingExpanded ? 
+                  <ChevronUp className="text" size={16} /> : 
+                  <ChevronDown className="text" size={16} />
+                }
               </div>
-              {isThinkingExpanded ? 
-                <ChevronUp className="text" size={16} /> : 
-                <ChevronDown className="text" size={16} />
-              }
-            </button>
-            <svg style={{display: 'none'}}>
-              <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
-                <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
-                <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-            </svg> 
-            
-            {/* Dropdown content */}
-            <AnimatePresence>
-              {isThinkingExpanded && (
-                <motion.div
-                  key="thinking-content"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ overflow: 'hidden', paddingTop: '5px' }}
-                >
-                  <div
-                    className="font-mono text-gray-300 overflow-auto rounded-b-md"
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: 'rgba(50, 50, 50, 0.3)',
-                      borderRadius: '2rem',
-                    }}
+              <svg style={{display: 'none'}}>
+                <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                  <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+                  <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+              </svg> 
+              
+              {/* Dropdown content */}
+              <AnimatePresence>
+                {isThinkingExpanded && (
+                  <motion.div
+                    key="thinking-content"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ overflow: 'hidden', paddingTop: '5px' }}
                   >
-                    <pre className="whitespace-pre-wrap">
-                      <code>{thinkContent}</code>
-                    </pre>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+                    <div
+                      className="font-mono text-gray-300 overflow-auto rounded-b-md"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: 'rgba(50, 50, 50, 0.3)',
+                        borderRadius: '2rem',
+                      }}
+                    >
+                      <pre className="whitespace-pre-wrap">
+                        <code>{thinkContent}</code>
+                      </pre>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
       )}
 
       {/* Regular message bubble */}
@@ -257,12 +257,12 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                 {displayContent}
               </ReactMarkdown>
               <svg style={{ display: 'none' }}>
-              <filter id="message-glass" x="0%" y="0%" width="100%" height="100%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
-                <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
-                <feDisplacementMap in="SourceGraphic" in2="blur" scale="80" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-            </svg>
+                <filter id="message-glass" x="0%" y="0%" width="100%" height="100%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                  <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+                  <feDisplacementMap in="SourceGraphic" in2="blur" scale="80" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+              </svg>
             </div>
           </div>
         </div>
