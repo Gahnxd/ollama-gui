@@ -18,7 +18,7 @@ function BrailleSpinner() {
     }, 100);
     
     return () => clearInterval(timer);
-  }, []);
+  }, [brailleChars.length]);
   
   return <span className="text-accent">{brailleChars[index]}</span>;
 }
