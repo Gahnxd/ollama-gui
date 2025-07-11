@@ -23,8 +23,6 @@ export default function Chat({ model, onNewStats }: ChatProps) {
   const textareaAnimation = useAnimation();
   const shineAnimation = useAnimation();
 
-
-
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (container) {
@@ -45,6 +43,35 @@ export default function Chat({ model, onNewStats }: ChatProps) {
       }
     }
   }, [messages, isTyping, userHasScrolled]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+    
+    // Add global event listener for keyboard shortcuts
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // If Cmd/Ctrl is pressed and there's text selected anywhere in the document
+      const selection = window.getSelection();
+      if ((e.metaKey || e.ctrlKey) && selection && selection.toString().length > 0) {
+        // Prevent the textarea from getting focus during copy operations
+        e.stopPropagation();
+        
+        // If the target is our textarea and a key like 'c' is pressed (for copy)
+        if (document.activeElement === textareaRef.current && 
+            ['c', 'x', 'a'].includes(e.key.toLowerCase())) {
+          // Let the default copy/cut/select all behavior happen
+          return;
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleGlobalKeyDown, true); // Use capture phase
+    
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown, true);
+    };
+  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
@@ -72,7 +99,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
     };
   }, []);
 
-    const handleSend = async () => {
+  const handleSend = async () => {
     if (!input.trim() || !model) return;
 
     // Reset stats when a new message is sent
@@ -264,7 +291,14 @@ export default function Chat({ model, onNewStats }: ChatProps) {
                 }
               }}
               value={input}
-              onChange={(e) => {
+              onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                // Only handle Enter key for sending message
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                 setInput(e.target.value);
                 
                 const lineHeight = 24; // Approximate line height
@@ -282,12 +316,7 @@ export default function Chat({ model, onNewStats }: ChatProps) {
                   e.target.style.overflowY = 'auto';
                 }
               }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
+
               className="bg-transparent text-white w-full resize-none focus:outline-none"
               placeholder="Ask me anything"
               style={{ 
