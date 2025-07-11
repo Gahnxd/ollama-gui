@@ -175,86 +175,88 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
           className={`messageBubbleGlass`}
           style={{ position: 'relative', borderRadius: '2rem', minWidth: '20%', maxWidth: '48%', width: 'auto', height: 'auto', minHeight: 'auto'}}
         >
-          <div className="prose prose-invert prose-sm max-w-full" style={{ padding: '1rem 1rem'}}>
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
-              components={{
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                code({className, children, node, ...props}: any) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  const codeContent = String(children || '');
-                  const position = node.position;
-                  const start = position?.start.offset;
-                  const end = position?.end.offset;
-                  const rawContent = displayContent.substring(start, end)
-                  
-                  const isInline = rawContent.includes("`") && !rawContent.includes("```");
-                  
-                  if (!isInline) {
-                    // This is a code block (not inline code)
+          <div style={{ padding: '1rem 1rem'}}>
+            <div className="prose prose-invert prose-sm max-w-full">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  code({className, children, node, ...props}: any) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const codeContent = String(children || '');
+                    const position = node.position;
+                    const start = position?.start.offset;
+                    const end = position?.end.offset;
+                    const rawContent = displayContent.substring(start, end)
+                    
+                    const isInline = rawContent.includes("`") && !rawContent.includes("```");
+                    
+                    if (!isInline) {
+                      // This is a code block (not inline code)
+                      return (
+                        <div className="relative w-90 overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem' }}>
+                          <button 
+                            onClick={() => handleCopyCode(codeContent)}
+                            className="model-button rounded-full"
+                            aria-label="Copy code"
+                            style={{ color: 'white', padding: '0.25rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
+                          >
+                            {copiedCode === codeContent ? 
+                              <Check size={10}/> : 
+                              <Copy size={10}/>
+                            }
+                          </button>
+                          <svg style={{display: 'none'}}>
+                            <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+                              <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                              <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+                              <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
+                            </filter>
+                          </svg> 
+                          <SyntaxHighlighter
+                            language={match ? match[1] : 'bash'}
+                            style={vscDarkPlus}
+                            customStyle={{ 
+                              background: 'transparent', 
+                              padding: '0.5rem', 
+                              paddingRight: '2.5rem' 
+                            }}
+                            wrapLongLines={true}
+                          >
+                            {codeContent}
+                          </SyntaxHighlighter>
+                        </div>
+                      );
+                    }
+                    return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1px', borderRadius: '2rem', paddingLeft: '8px', paddingRight: '8px' }}>{children}</code>;
+                  },
+                  // Custom link component to handle long URLs
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  a({children, href, ...props}: any) {
                     return (
-                      <div className="relative w-90 overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem' }}>
-                        <button 
-                          onClick={() => handleCopyCode(codeContent)}
-                          className="model-button rounded-full"
-                          aria-label="Copy code"
-                          style={{ color: 'white', padding: '0.25rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
-                        >
-                          {copiedCode === codeContent ? 
-                            <Check size={10}/> : 
-                            <Copy size={10}/>
-                          }
-                        </button>
-                        <svg style={{display: 'none'}}>
-                          <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
-                            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
-                            <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
-                            <feDisplacementMap in="SourceGraphic" in2="blur" scale="5" xChannelSelector="R" yChannelSelector="G" />
-                          </filter>
-                        </svg> 
-                        <SyntaxHighlighter
-                          language={match ? match[1] : 'bash'}
-                          style={vscDarkPlus}
-                          customStyle={{ 
-                            background: 'transparent', 
-                            padding: '0.5rem', 
-                            paddingRight: '2.5rem' 
-                          }}
-                          wrapLongLines={true}
-                        >
-                          {codeContent}
-                        </SyntaxHighlighter>
-                      </div>
+                      <a 
+                        href={href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          textDecoration: 'underline',
+                          color: 'rgba(91, 108, 255, 0.90)',
+                          position: 'relative',
+                          zIndex: 1
+                        }}
+                        {...props}
+                      >
+                        {children}
+                      </a>
                     );
                   }
-                  return <code className={className} {...props} style={{ backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1px', borderRadius: '2rem', paddingLeft: '8px', paddingRight: '8px' }}>{children}</code>;
-                },
-                // Custom link component to handle long URLs
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                a({children, href, ...props}: any) {
-                  return (
-                    <a 
-                      href={href} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
-                        textDecoration: 'underline',
-                        color: 'rgba(91, 108, 255, 0.90)',
-                        position: 'relative',
-                        zIndex: 1
-                      }}
-                      {...props}
-                    >
-                      {children}
-                    </a>
-                  );
-                }
-              }}
-            >
-              {displayContent}
-            </ReactMarkdown>
+                }}
+              >
+                {displayContent}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       </motion.div>)}
