@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,26 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 interface MessageBubbleProps {
   message: Message;
   isUser: boolean;
+}
+
+// Animated ellipsis component
+function AnimatedEllipsis() {
+  const [dots, setDots] = useState('');
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === '') return '.';
+        if (prev === '.') return '..';
+        if (prev === '..') return '...';
+        return '';
+      });
+    }, 200);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return <span>{dots}</span>;
 }
 
 export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
@@ -117,7 +137,13 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                 onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
               >
                 <div className="flex items-center text">
-                  {displayContent === "" ? (<span style={{paddingRight: '8px'}}>Thinking...</span>) : (<span style={{paddingRight: '8px'}}>Thoughts</span>)}
+                  {displayContent === "" ? (
+                    <span style={{paddingRight: '8px'}}>
+                      Thinking<AnimatedEllipsis />
+                    </span>
+                  ) : (
+                    <span style={{paddingRight: '8px'}}>Thoughts</span>
+                  )}
                 </div>
                 {isThinkingExpanded ? 
                   <ChevronUp className="text" size={16} /> : 
