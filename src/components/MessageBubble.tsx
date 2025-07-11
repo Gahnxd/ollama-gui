@@ -145,11 +145,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
     <div className="flex flex-col">
       {/* Think content displayed as a dropdown above the message bubble */}
       {thinkContent && !isUser && (
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+          <div
             className="flex justify-start mb-1"
             style={{ padding: '0.5rem 1rem'}}
           >
@@ -211,7 +207,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                 )}
                 </AnimatePresence>
             </div>
-          </motion.div>
+          </div>
       )}
 
       {/* Regular message bubble */}
