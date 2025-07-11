@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Message } from '@/lib/types';
 import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -144,7 +145,11 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
     <div className="flex flex-col">
       {/* Think content displayed as a dropdown above the message bubble */}
       {thinkContent && !isUser && (
-          <div
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
             className="flex justify-start mb-1"
             style={{ padding: '0.5rem 1rem'}}
           >
@@ -153,9 +158,17 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
               style={{ maxWidth: '48%', width: 'fit-content' }}
             >
               {/* Dropdown header - styled like code block header */}
-                <div 
+                <motion.div 
                   className="messageBubbleGlass think-button flex items-center justify-between px-3 py-2 cursor-pointer"
                   onClick={() => handleExpandThinking()}
+                  whileTap={{ scale: 0.80 }}
+                  animate={{
+                    scale: isThinkingExpanded ? [0.95, 1] : 1
+                  }}
+                  transition={{
+                    duration: 0.2,
+                    ease: "easeInOut"
+                  }}
                 >
                   <div className="flex items-center text">
                     {displayContent === "" ? (
@@ -170,11 +183,17 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                     <ChevronUp className="text" size={16} /> : 
                     <ChevronDown className="text" size={16} />
                   }
-                </div>
+                </motion.div>
                 {/* Dropdown content */}
+                <AnimatePresence>
                 {isThinkingExpanded && (
-                  <div
-                    style={{ paddingTop: '5px' }}
+                  <motion.div
+                    key="thinking-content"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ overflow: 'hidden', paddingTop: '5px' }}
                   >
                     <div
                       className="font-mono text-gray-300 overflow-auto rounded-b-md"
@@ -188,10 +207,11 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                         <code>{thinkContent}</code>
                       </pre>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
             </div>
-          </div>
+          </motion.div>
       )}
 
       {/* Regular message bubble */}
@@ -234,17 +254,24 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                       // This is a code block (not inline code)
                       return (
                         <div className="relative overflow-hidden" style={{ position: 'relative', backgroundColor: 'rgba(50, 50, 50, 0.4)', padding: '1rem', minWidth: '3em', borderRadius: '2rem', maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'break-word', overflowX: 'hidden', width: 'fit-content' }}>
-                          <div 
+                          <motion.div 
                             onClick={() => handleCopyCode(codeContent)}
                             className="messageBubbleGlass model-button flex items-center justify-between cursor-pointer rounded-full"
                             aria-label="Copy code"
                             style={{ color: 'white', padding: '0.15rem', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', top: '1em', right: '1em' }}
+                            animate={{
+                              scale: copiedCode === codeContent ? [0.7, 1] : 1
+                            }}
+                            transition={{
+                              duration: 0.2,
+                              ease: "easeInOut"
+                            }}
                           >
                             {copiedCode === codeContent ? 
                               <Check size={12}/> : 
                               <Copy size={12}/>
                             }
-                          </div>
+                          </motion.div>
                           <svg style={{display: 'none'}}>
                             <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
                               <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
