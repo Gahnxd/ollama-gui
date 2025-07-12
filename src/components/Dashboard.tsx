@@ -25,7 +25,7 @@ function BrailleSpinner() {
 
 export default function Dashboard({ stats }: DashboardProps) {
   return (
-    <div className="stats-panel h-full w-full grid grid-cols-1 auto-rows-auto text-white" style={{ backgroundColor: 'rgba(0, 0, 0, 0)'}}>
+    <div className="stats-panel h-full w-fit grid grid-cols-1 auto-rows-auto text-white" style={{ backgroundColor: 'rgba(0, 0, 0, 0)', padding: '1rem 0'}}>
       {/* Model ID - Grid Item */}
       <div className="grid grid-cols-1">
         {/* Box top border with corners */}
@@ -119,10 +119,6 @@ export default function Dashboard({ stats }: DashboardProps) {
           <div style={ { color : "rgb(255, 1, 1)"}}>┘</div>
         </div>
       </div>
-
-      
-      {/* Bottom margin space */}
-      <div className="h-4"></div>
     </div>
   );
 }

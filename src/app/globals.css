@@ -79,7 +79,7 @@ code {
 
 /* Header Toggle Buttons */
 .header-toggle-button {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(50, 50, 50, 0.85);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -92,12 +92,12 @@ code {
 }
 
 .header-toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(50, 50, 50, 0.99);
 }
 
 .header-toggle-button.active {
   color: #b90025;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(50, 50, 50, 0.85);
 }
 
 /* Stats Panel Styles */
@@ -249,7 +249,7 @@ code {
   inset: 0;
   border-radius: 2rem;
   -webkit-backdrop-filter: blur(0px);
-          backdrop-filter: blur(0px);
+          backdrop-filter: blur(2px);
   -webkit-filter: url(#message-glass);
           filter: url(#message-glass);
   overflow: hidden;

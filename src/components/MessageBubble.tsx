@@ -4,15 +4,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Message } from '@/lib/types';
+import { Message, Document } from '@/lib/types';
 import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-
+import getFileIcon from './FileIcon';
 
 interface MessageBubbleProps {
   message: Message;
   isUser: boolean;
+  documents: Document[];
 }
 
 // Animated ellipsis component
@@ -35,13 +36,20 @@ function AnimatedEllipsis() {
   return <span>{dots}</span>;
 }
 
-export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
+export default function MessageBubble({ message, isUser, documents }: MessageBubbleProps) {
   // Ref to track the content container's dimensions
   const contentRef = useRef<HTMLDivElement>(null);
   const [thinkContent, setThinkContent] = useState<string | null>(null);
   const [displayContent, setDisplayContent] = useState<string>(message.content || '');
   const [isThinkingExpanded, setIsThinkingExpanded] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const names: string[] = [];
+  const types: string[] = [];
+
+  for (const doc of documents) {
+    names.push(doc.name);
+    types.push(doc.type);
+  }
   
   // Reset the copied state after 2 seconds
   useEffect(() => {
@@ -210,6 +218,59 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
           </div>
       )}
 
+      {/* Document attachments */}
+      {names.length > 0 && isUser && (
+        <div className="flex mb-4">
+          <div 
+            className="flex justify-right scroll-smooth" 
+            style={{ 
+              gap: '7px', 
+              overflowX: 'scroll', 
+              whiteSpace: 'nowrap', 
+              maxWidth: '45%',
+              position: 'relative',
+              marginLeft: 'auto',
+              right: '55px'
+            }}>
+          {names.map((name, index) => (
+              <div
+                key={index}
+                className="messageBubbleGlass flex items-center justify-between"
+                style={{
+                  justifyContent: 'center',
+                  width: 'auto',
+                  minWidth: 'fit-content',
+                  paddingTop: '0.5rem',
+                  paddingBottom: '0.5rem',
+                  paddingLeft: '5px',
+                  paddingRight: '5px',
+                }}
+              >
+                <div className="text-accent" style={{ paddingLeft: '5px' }}>{getFileIcon(types[index])}</div>
+                <span 
+                  className="overflow-hidden overflow-ellipsis bg-transparent" 
+                  style={{ 
+                    color: 'rgba(255, 255, 255, 0.80)',
+                    paddingRight: '5px', 
+                    paddingLeft: '5px', 
+                    fontSize: '12px' 
+                  }}
+                >
+                  {name}
+                </span>
+                <svg style={{ display: 'none' }}>
+                <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                  <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
+                  <feDisplacementMap in="SourceGraphic" in2="blur" scale="50" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+              </svg>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Regular message bubble */}
       {displayContent !== '' && (<div
         className={`flex my-1 ${isUser ? 'justify-end' : 'justify-start'}`}
@@ -228,7 +289,7 @@ export default function MessageBubble({ message, isUser }: MessageBubbleProps) {
                 overflowWrap: 'break-word',
                 minHeight: message.streaming && maxHeight ? `${maxHeight}px` : 'auto',
                 position: 'relative',
-                zIndex: 1,
+                zIndex: 0,
                 transition: 'none',
                 overflow: 'visible'
               }}>

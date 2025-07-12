@@ -9,6 +9,15 @@ export interface Message {
   content: string;
   streaming?: boolean;
   id?: string;
+  documents?: Document[];
+}
+
+export interface Document {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  path: string;
 }
 
 export interface LLMStats {
@@ -21,4 +30,8 @@ export interface LLMStats {
 
 export interface ModelChatHistory {
   [modelName: string]: Message[];
+}
+
+export interface ModelDocuments {
+  [modelName: string]: Document[];
 }

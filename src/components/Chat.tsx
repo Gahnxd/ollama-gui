@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Message, LLMStats, ModelChatHistory } from '@/lib/types';
+import { Message, LLMStats, ModelChatHistory, Document } from '@/lib/types';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import { motion, useAnimation } from 'framer-motion';
-
+import FileUploader, { UploadedFile } from './FileUploader';
+import { Upload, X } from 'lucide-react';
+import getFileIcon from './FileIcon';
 
 interface ChatProps {
   model: string;
@@ -18,17 +20,22 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showUploader, setShowUploader] = useState(false);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [textAreaDocs, setTextAreaDocs] = useState<Document[]>([]);
+  const [messageDocs, setMessageDocs] = useState<Document[][]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
   const textareaAnimation = useAnimation();
   const shineAnimation = useAnimation();
+  const [init, setInit] = useState(true);
 
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (container) {
-      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 1; // +1 for tolerance
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 1;
       setUserHasScrolled(!isAtBottom);
     }
   };
@@ -36,7 +43,6 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
   useEffect(() => {
     const container = chatContainerRef.current;
     if (container) {
-      // Scroll to bottom only if user hasn't scrolled up
       if (!userHasScrolled) {
         container.scrollTo({
           top: container.scrollHeight,
@@ -46,42 +52,100 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
     }
   }, [messages, isTyping, userHasScrolled]);
 
-  // Load messages when model changes
   useEffect(() => {
-    if (model) {
-      // Load existing messages for this model if they exist
+    if (model && init) {
       const existingMessages = chatHistory[model] || [];
       setMessages(existingMessages);
-      // Reset typing state when switching models
       setIsTyping(false);
-      // Reset user scroll state
       setUserHasScrolled(false);
+      setMessageDocs([]);
+      setInit(false);
     }
-  }, [model, chatHistory]);
+  }, [model, chatHistory, init]);
+  
+  useEffect(() => {
+    if (model && messages.length > 0) {
+        setChatHistory(prev => ({
+          ...prev,
+          [model]: messages
+        }));
+    }
+  }, [messages, model, setChatHistory]);
+
+  const handleFileUpload = async (files: UploadedFile[]) => {
+    const uploadedDocuments: Document[] = [];
+    
+    for (const file of files) {
+      const formData = new FormData();
+      
+      // Create a file object from the uploaded file data
+      const fileBlob = new Blob([file.content || ''], { type: file.type });
+      formData.append('file', fileBlob, file.name);
+      
+      console.log(`Uploading ${file.name}`);
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            uploadedDocuments.push({
+              id: data.file.id,
+              name: data.file.name,
+              size: data.file.size,
+              type: data.file.type,
+              path: data.file.path
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
+    }
+    
+    if (uploadedDocuments.length > 0) {
+      // Update documents
+      const updatedDocuments = [...documents, ...uploadedDocuments];
+      setDocuments(updatedDocuments);
+      setTextAreaDocs(updatedDocuments);
+      
+      // Hide uploader after successful upload
+      setShowUploader(false);
+    }
+  };
+  
+  const handleRemoveDocument = (id: string) => {
+    const updatedDocuments = documents.filter(doc => doc.id !== id);
+    
+    const timer = setTimeout(() => {
+      setDocuments(updatedDocuments);
+      setTextAreaDocs(updatedDocuments);
+    }, 250);
+    
+    return () => clearTimeout(timer);
+  };
 
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
     
-    // Add global event listener for keyboard shortcuts
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // If Cmd/Ctrl is pressed and there's text selected anywhere in the document
       const selection = window.getSelection();
       if ((e.metaKey || e.ctrlKey) && selection && selection.toString().length > 0) {
-        // Prevent the textarea from getting focus during copy operations
         e.stopPropagation();
         
-        // If the target is our textarea and a key like 'c' is pressed (for copy)
         if (document.activeElement === textareaRef.current && 
             ['c', 'x', 'a'].includes(e.key.toLowerCase())) {
-          // Let the default copy/cut/select all behavior happen
           return;
         }
       }
     };
     
-    window.addEventListener('keydown', handleGlobalKeyDown, true); // Use capture phase
+    window.addEventListener('keydown', handleGlobalKeyDown, true);
     
     return () => {
       window.removeEventListener('keydown', handleGlobalKeyDown, true);
@@ -117,7 +181,6 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
   const handleSend = async () => {
     if (!input.trim() || !model) return;
 
-    // Reset stats when a new message is sent
     onNewStats({
       inputTokens: 0,
       outputTokens: 0,
@@ -126,20 +189,25 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
       modelName: model
     });
 
-    // Re-enable auto-scrolling when a new message is sent
     setUserHasScrolled(false);
 
     const userMessage: Message = { role: 'user', content: input, id: `user-${Date.now()}` };
     
-    // Update messages for the current model
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    // Update messages with the user message
+    setMessages(currentMessages => [...currentMessages, userMessage]);
     
-    // Update chat history for the current model
     setChatHistory(prevHistory => ({
       ...prevHistory,
-      [model]: updatedMessages
+      [model]: [...(prevHistory[model] || []), userMessage]
     }));
+
+    setMessageDocs((prev) => [...prev, documents]);
+
+    // Clear documents after sending
+    if (documents.length > 0) {
+      setDocuments([]);
+      setTextAreaDocs([]);
+    }
     
     setInput('');
     setIsTyping(true);
@@ -147,7 +215,7 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: [...messages, userMessage] }),
+      body: JSON.stringify({ model, messages: [...messages, userMessage], documents }),
     });
 
     if (!response.body) {
@@ -157,9 +225,15 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let assistantMessage = '';
     const assistantMessageId = `assistant-${Date.now()}`;
-    setMessages((prev) => [...prev, { role: 'assistant', content: '', id: assistantMessageId, streaming: true }]);
+    
+    // Add an empty assistant message that will be updated with content
+    setMessages(currentMessages => [...currentMessages, { 
+      role: 'assistant', 
+      content: '', 
+      id: assistantMessageId, 
+      streaming: true 
+    }]);
     
     const startTime = performance.now();
     let inputTokens = 0;
@@ -218,46 +292,54 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
         const parsed = JSON.parse(line);
         
         if (parsed.message && parsed.message.content) {
-          assistantMessage += parsed.message.content;
-          outputTokens++; 
-          // Update messages with streaming content
-          setMessages((prev) => {
-            const updatedMessages = prev.map((msg, i) =>
-              i === prev.length - 1
-                ? { ...msg, content: assistantMessage, streaming: true }
-                : msg
-            );
-            
-            // Update chat history for the current model with streaming content
-            setChatHistory(prevHistory => ({
-              ...prevHistory,
-              [model]: updatedMessages
-            }));
-            
-            return updatedMessages;
+          const newContent = parsed.message.content;
+          outputTokens++;
+          
+          // Update the assistant message with new content
+          setMessages(currentMessages => {
+            const lastIndex = currentMessages.length - 1;
+            if (lastIndex >= 0) {
+              const updatedMessages = [...currentMessages];
+              updatedMessages[lastIndex] = {
+                ...updatedMessages[lastIndex],
+                content: updatedMessages[lastIndex].content + newContent
+              };
+              return updatedMessages;
+            }
+            return currentMessages;
           });
         }
 
         if (parsed.done) {
           updateAllStats(parsed);
           setIsTyping(false);
+          
           // Mark message as no longer streaming when done
-          // Mark message as no longer streaming when done
-          setMessages((prev) => {
-            const updatedMessages = prev.map((msg, i) =>
-              i === prev.length - 1
-                ? { ...msg, streaming: false }
-                : msg
-            );
-            
-            // Update chat history for the current model with completed message
-            setChatHistory(prevHistory => ({
-              ...prevHistory,
-              [model]: updatedMessages
-            }));
-            
-            return updatedMessages;
+          setMessages(currentMessages => {
+            const lastIndex = currentMessages.length - 1;
+            if (lastIndex >= 0) {
+              const updatedMessages = [...currentMessages];
+              updatedMessages[lastIndex] = {
+                ...updatedMessages[lastIndex],
+                streaming: false
+              };
+              return updatedMessages;
+            }
+            return currentMessages;
           });
+          
+          // Update chat history with the final message in a separate effect
+          setTimeout(() => {
+            const assistantMessage = messages[messages.length - 1];
+            if (assistantMessage) {
+              setChatHistory(prev => ({
+                ...prev,
+                [model]: [...(prev[model] || []), assistantMessage]
+              }));
+            }
+            setMessageDocs((prev) => [...prev, []]);
+          }, 100);
+          
           return;
         }
       }
@@ -273,133 +355,242 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="max-w-lg"
+            style={{ position: 'relative', borderRadius: '2rem', maxWidth: '100%', width: 'auto', height: 'fit-content', bottom: '60px'}}
           >
             <h1 className="text-3xl font-bold mb-2">You are using <span className="text-accent">{model}</span></h1>
             <h2 className="text-1xl mb-8 text-white/80">What&apos;s on your mind?</h2>
           </motion.div>
         </div>
       ) : (
-        <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 p-4 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+        <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 p-4 space-y-4 overflow-y-auto" style={{ paddingBottom: '140px', paddingTop: '10px' }}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} isUser={msg.role === 'user'} />
+            <MessageBubble key={i} message={msg} isUser={msg.role === 'user'} documents={messageDocs[i]||[]} />
           ))}
           {isTyping && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
       )}
       
-      <div className="p-6 flex justify-center items-center">
-        <motion.div
-          animate={textareaAnimation}
-          className="flex justify-center items-center p-2"
-          style={{width: '700px', marginBottom: '50px', marginTop: '50px'}}
-        >
-          <div className="w-full glassContainer" style={{ position: 'relative', overflow: 'hidden', maxHeight: '144px', height: 'auto', minHeight: '60px' }}>
-            <motion.div
-              animate={shineAnimation}
-              onAnimationComplete={() => shineAnimation.set({ x: '-100%' })}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'none',
-                background: 'linear-gradient(to right, transparent 20%, rgba(255, 255, 255, 0.05) 30%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.05) 70%, transparent 80%)',
-                x: '-100%',
-                zIndex: 0,
-              }}
-            />
-            <textarea
-              onFocus={() => {
-                textareaAnimation.start({
-                  scale: [0.99, 0.98, 1],
-                  transition: { duration: 0.3, ease: 'easeInOut' }
-                });
-                shineAnimation.start({
-                  x: '100%',
-                  transition: { duration: 0.3, ease: 'easeInOut' }
-                });
-              }}
-              ref={(el) => {
-                textareaRef.current = el;
-                if (el) {
-                  // Initial height adjustment
-                  setTimeout(() => {
-                    const lineHeight = 24; // Approximate line height
-                    const maxHeight = lineHeight * 6; // 6 lines max
-                    
-                    // Reset height to content
-                    el.style.height = 'auto';
-                    
-                    // Set new height, capped at maxHeight
-                    if (el.scrollHeight <= maxHeight) {
-                      el.style.height = el.scrollHeight + 'px';
-                      el.style.overflowY = 'hidden';
-                    } else {
-                      el.style.height = maxHeight + 'px';
-                      el.style.overflowY = 'auto';
-                    }
-                  }, 0);
-                }
-              }}
-              value={input}
-              onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                // Only handle Enter key for sending message
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                setInput(e.target.value);
-                
-                const lineHeight = 24; // Approximate line height
-                const maxHeight = lineHeight * 6; // 6 lines max
-                
-                // Reset height to content
-                e.target.style.height = 'auto';
-                
-                // Set new height, capped at maxHeight
-                if (e.target.scrollHeight <= maxHeight) {
-                  e.target.style.height = e.target.scrollHeight + 'px';
-                  e.target.style.overflowY = 'hidden';
-                } else {
-                  e.target.style.height = maxHeight + 'px';
-                  e.target.style.overflowY = 'auto';
-                }
-              }}
-
-              className="bg-transparent text-white w-full resize-none focus:outline-none"
-              placeholder="Ask me anything"
-              style={{ 
-                color: 'rgba(255, 255, 255, 0.90)',
-                padding: '1em 1em',
-                minHeight: '24px',     /* Start with single line height */
-                maxHeight: '144px',    /* Max height (6 lines at 24px) */
-                boxSizing: 'border-box',
-                display: 'block',
-                width: '95%',
-                height: '90%',
-                margin: '0 auto',
-                border: 'none',
-                lineHeight: '24px',    /* Consistent line height */
-                transition: 'height 0.1s ease',
-                position: 'relative',
-                zIndex: 1
-              }}
-              rows={1}
-            />
+      {/* File uploader modal */}
+      {showUploader && (
+        <div className="justify-center items-center" style={{width: 'fit-content', height: 'fit-content', position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)'}}>
+          <div 
+            className="messageBubbleGlass rounded-lg w-fit max-w-md"
+            style={{ position: 'relative', borderRadius: '2rem', maxWidth: '100%', width: 'auto', height: 'fit-content'}}
+          >
+            <div className="flex flex-col justify-center items-center w-full" style={{ padding: '1rem' }}>
+              <div className="flex items-center w-full mb-4" style={{ justifyContent: 'center' }}>
+                <h3 className="text-lg font-medium text-white">
+                  Upload Documents
+                </h3>
+                <motion.div 
+                  onClick={() => {
+                    setTimeout(() => {
+                      setShowUploader(false);
+                    }, 180);
+                  }}
+                  className="glassContainer model-button rounded-full cursor-pointer hover:bg-gray-800/80 transition-colors"
+                  style={{ color: 'rgba(255, 255, 255, 0.90)', width: '30px', height: '30px', position: 'absolute', right: '10px', top: '10px' }}
+                  whileTap={{scale: 0.2}}
+                  transition={{
+                    duration: 0.2,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <X size={20} />
+                </motion.div>
+              </div>
+              <FileUploader onFileUpload={handleFileUpload} />
+            </div>
           </div>
+        </div>
+      )}
+      
+      <div className="justify-center items-center" style={{ height: 'fit-content', width: '600px', position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)' }}>
+        <div className="flex flex-col items-center w-full" style={{ maxWidth: '600px', height: 'fit-content' }}>
+          <div className="flex justify-left w-full mb-4 scroll-smooth" style={{ gap: '7px', overflowX: 'scroll', whiteSpace: 'nowrap' }}>
+            {textAreaDocs.map((doc, index) => (
+                <div
+                  key={index}
+                  className="messageBubbleGlass flex items-center justify-between"
+                  style={{
+                    justifyContent: 'center',
+                    width: 'auto',
+                    minWidth: 'fit-content',
+                    paddingTop: '0.5rem',
+                    paddingBottom: '0.5rem',
+                    paddingLeft: '5px',
+                    paddingRight: '10px',
+                  }}
+                >
+                  <div className="text-accent" style={{ paddingLeft: '10px' }}>{getFileIcon(doc.type)}</div>
+                  <span 
+                    className="overflow-hidden overflow-ellipsis bg-transparent" 
+                    style={{ 
+                      color: 'rgba(255, 255, 255, 0.70)',
+                      paddingRight: '30px', 
+                      paddingLeft: '5px', 
+                      fontSize: '12px' 
+                    }}
+                  >
+                    {doc.name}
+                  </span>
+                  <motion.div 
+                    onClick={() => handleRemoveDocument(doc.id)}
+                    className="glassContainer model-button cursor-pointer rounded-full"
+                    aria-label="Copy code"
+                    style={{ 
+                      color: 'rgba(255, 255, 255, 0.90)', 
+                      width: '20px', 
+                      height: '20px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      position: 'absolute', 
+                      right: '7px' 
+                    }}
+                    whileTap={{scale: 0.4}}
+                    transition={{
+                      duration: 0.2,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <X size={15} />
+                  </motion.div>
+                </div>
+              ))}
+          </div>
+          <motion.div
+            animate={textareaAnimation}
+            className="flex justify-center items-center p-2 w-full"
+            style={{ marginBottom: '50px', marginTop: '0' }}
+          >
+            <div className="messageBubbleGlass" style={{ position: 'relative', overflow: 'hidden', width: '100%', maxHeight: '144px', height: 'auto', minHeight: '60px'}}>
+              <motion.div
+                animate={shineAnimation}
+                onAnimationComplete={() => shineAnimation.set({ x: '-100%' })}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                  background: 'linear-gradient(to right, transparent 20%, rgba(255, 255, 255, 0.05) 30%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.05) 70%, transparent 80%)',
+                  x: '-100%',
+                  zIndex: 0,
+                }}
+              />
+              <textarea
+                onFocus={() => {
+                  textareaAnimation.start({
+                    scale: [0.99, 0.98, 1],
+                    transition: { duration: 0.3, ease: 'easeInOut' }
+                  });
+                  shineAnimation.start({
+                    x: '100%',
+                    transition: { duration: 0.3, ease: 'easeInOut' }
+                  });
+                }}
+                ref={(el) => {
+                  textareaRef.current = el;
+                  if (el) {
+                    // Initial height adjustment
+                    setTimeout(() => {
+                      const lineHeight = 24; // Approximate line height
+                      const maxHeight = lineHeight * 6; // 6 lines max
+                      
+                      // Reset height to content
+                      el.style.height = 'auto';
+                      
+                      // Set new height, capped at maxHeight
+                      if (el.scrollHeight <= maxHeight) {
+                        el.style.height = el.scrollHeight + 'px';
+                        el.style.overflowY = 'hidden';
+                      } else {
+                        el.style.height = maxHeight + 'px';
+                        el.style.overflowY = 'auto';
+                      }
+                    }, 0);
+                  }
+                }}
+                value={input}
+                onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                  // Only handle Enter key for sending message
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  setInput(e.target.value);
+                  
+                  const lineHeight = 24; // Approximate line height
+                  const maxHeight = lineHeight * 6; // 6 lines max
+                  
+                  // Reset height to content
+                  e.target.style.height = 'auto';
+                  
+                  // Set new height, capped at maxHeight
+                  if (e.target.scrollHeight <= maxHeight) {
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                    e.target.style.overflowY = 'hidden';
+                  } else {
+                    e.target.style.height = maxHeight + 'px';
+                    e.target.style.overflowY = 'auto';
+                  }
+                }}
+
+                className="bg-transparent text-white w-full resize-none focus:outline-none"
+                placeholder="Ask me anything"
+                style={{ 
+                  color: 'rgba(255, 255, 255, 0.90)',
+                  padding: '1em 1em',
+                  minHeight: '24px',     /* Start with single line height */
+                  maxHeight: '144px',    /* Max height (6 lines at 24px) */
+                  boxSizing: 'border-box',
+                  display: 'block',
+                  width: '95%',
+                  height: '90%',
+                  margin: '0 auto',
+                  border: 'none',
+                  lineHeight: '24px',    /* Consistent line height */
+                  transition: 'height 0.1s ease',
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+                rows={1}
+              />
+            </div>
+            
+            <motion.div 
+              onClick={() => {
+                setTimeout(() => {
+                  setShowUploader(prev => !prev)
+                }, 180);
+              }}
+              className="messageBubbleGlass model-button ml-2 p-3 rounded-full cursor-pointer hover:bg-gray-800/80 transition-colors"
+              aria-label="Attach files"
+              style={{ color: 'white', padding: '0.15rem', width: '60px', height: '48px', left: '1em' }}
+              whileTap={{scale: 0.2}}
+              transition={{
+                duration: 0.2,
+                ease: "easeInOut"
+              }}
+            >
+              <Upload size={18} />
+            </motion.div>
+
         </motion.div>
       </div>
       <svg style={{ display: 'none' }}>
-      <filter id="container-glass" x="0%" y="0%" width="100%" height="100%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
-        <feGaussianBlur in="noise" stdDeviation="0.05" result="blur" />
-        <feDisplacementMap in="SourceGraphic" in2="blur" scale="50" xChannelSelector="R" yChannelSelector="G" />
-      </filter>
-    </svg>
+        <filter id="message-glass" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="0.01" result="blur" />
+          <feDisplacementMap in="SourceGraphic" in2="blur" scale="10" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
     </div>
+  </div>
   );
 }

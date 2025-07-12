@@ -41,23 +41,23 @@ export default function HomePage() {
       <main className="w-full h-full flex flex-col">
         {model ? (
           <>
-            <div className="flex justify-between items-center p-4" style={{ marginBottom: '10px'}}>
-              <button 
-                onClick={() => setModel('')} 
-                className="header-toggle-button"
-                aria-label="Go to home screen"
+            <div className='cursor-pointer' style={{ position: 'absolute', top: '0', left: '0', zIndex: 1 }}>
+            <button 
+              onClick={() => setModel('')} 
+              className="header-toggle-button cursor-pointer"
+              aria-label="Go to home screen"
+            >
+              <HomeIcon size={20} />
+            </button>
+            </div>
+            <div className='cursor-pointer' style={{ position: 'absolute', top: '0', right: '0', zIndex: 1 }}>
+              <button
+                onClick={() => setShowStats(!showStats)}
+                className={`header-toggle-button cursor-pointer ${showStats ? 'active' : ''}`}
+                aria-label="Toggle stats"
               >
-                <HomeIcon size={20} />
+                <BarChart2 size={20} />
               </button>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setShowStats(!showStats)}
-                  className={`header-toggle-button ${showStats ? 'active' : ''}`}
-                  aria-label="Toggle stats"
-                >
-                  <BarChart2 size={20} />
-                </button>
-              </div>
             </div>
             
             {/* Main content with chat and stats sidebar */}
