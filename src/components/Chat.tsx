@@ -408,7 +408,7 @@ export default function Chat({ model, onNewStats, chatHistory, setChatHistory }:
       
       <div className="justify-center items-center" style={{ height: 'fit-content', width: '600px', position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)' }}>
         <div className="flex flex-col items-center w-full" style={{ maxWidth: '600px', height: 'fit-content' }}>
-          <div className="flex justify-left w-full mb-4 scroll-smooth" style={{ gap: '7px', overflowX: 'scroll', whiteSpace: 'nowrap' }}>
+          <div className="flex justify-left w-full mb-4 scroll-smooth" style={{ gap: '7px', overflowX: 'scroll', whiteSpace: 'nowrap', paddingBottom: '10px' }}>
             {textAreaDocs.map((doc, index) => (
                 <div
                   key={index}
